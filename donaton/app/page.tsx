@@ -35,14 +35,11 @@ export default function Home() {
             </h1>
             <p className="text-lg text-slate-500 mb-10 max-w-xl leading-relaxed">
               Plataforma para centralizar la gestión de recursos y optimizar la logística, 
-              asegurando que la ayuda llegue oportunamente a las comunidades afectadas. [cite: 9]
+              asegurando que la ayuda llegue oportunamente a las comunidades afectadas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold transition shadow-lg shadow-blue-200">
                 Registrar Donación <ArrowRight size={18} />
-              </button>
-              <button className="bg-white border-2 border-slate-100 text-slate-600 px-8 py-4 rounded-2xl font-bold hover:bg-slate-50 transition">
-                Reportar Necesidad [cite: 26]
               </button>
             </div>
           </div>
@@ -67,7 +64,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold mb-3">Gestión de Donaciones</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
-              Administra recursos, origen y centros de acopio asignados para cada donación recibida. [cite: 24]
+              Administra recursos, origen y centros de acopio asignados para cada donación recibida.
             </p>
           </div>
 
@@ -78,7 +75,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold mb-3">Logística y Distribución</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
-              Control de inventario, planificación de envíos y seguimiento hasta la entrega final. [cite: 25]
+              Control de inventario, planificación de envíos y seguimiento hasta la entrega final.
             </p>
           </div>
 
@@ -89,7 +86,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold mb-3">Necesidades en Terreno</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
-              Reporte de recursos específicos y ubicación geográfica de los damnificados. [cite: 26]
+              Reporte de recursos específicos y ubicación geográfica de los damnificados.
             </p>
           </div>
         </section>
