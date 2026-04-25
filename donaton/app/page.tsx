@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Heart, Truck, MapPin, ArrowRight, ShieldCheck } from "lucide-react";
 
 export default function Home() {
@@ -12,11 +13,14 @@ export default function Home() {
           </div>
           <span className="text-2xl font-bold tracking-tight text-blue-700">Donaton</span>
         </div>
+        
+        {/* Enlaces desactivados según tu requerimiento */}
         <div className="hidden md:flex gap-10 text-sm font-semibold text-slate-500">
-          <a href="#" className="hover:text-blue-600 transition">Donaciones</a>
-          <a href="#" className="hover:text-blue-600 transition">Logística</a>
-          <a href="#" className="hover:text-blue-600 transition">Necesidades</a>
+          <span className="cursor-default">Donaciones</span>
+          <span className="cursor-default">Logística</span>
+          <span className="cursor-default">Necesidades</span>
         </div>
+        
         <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition">
           Portal Admin
         </button>
@@ -38,14 +42,16 @@ export default function Home() {
               asegurando que la ayuda llegue oportunamente a las comunidades afectadas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold transition shadow-lg shadow-blue-200">
-                Registrar Donación <ArrowRight size={18} />
-              </button>
+              {/* Único botón activo que redirige al formulario */}
+              <Link href="/vista-donaciones">
+                <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold transition shadow-lg shadow-blue-200 cursor-pointer">
+                  Registrar Donación <ArrowRight size={18} />
+                </button>
+              </Link>
             </div>
           </div>
 
           <div className="md:w-2/5 flex justify-center">
-             {/* Ilustración simple con colores del contexto */}
              <div className="relative w-64 h-64 bg-sky-50 rounded-full flex items-center justify-center border-4 border-white shadow-xl">
                 <Heart size={100} className="text-sky-200" strokeWidth={1.5} />
                 <div className="absolute -top-4 -right-4 bg-white p-4 rounded-2xl shadow-lg border border-slate-50">
@@ -55,36 +61,33 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Módulos principales del sistema  */}
+        {/* Módulos principales del sistema (Tarjetas informativas sin enlace) */}
         <section className="py-20 grid md:grid-cols-3 gap-8 border-t border-slate-50">
-          {/* Módulo Donaciones */}
-          <div className="p-8 rounded-3xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+          <div className="p-8 rounded-3xl border border-slate-100 bg-white">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6">
               <Heart size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-3">Gestión de Donaciones</h3>
+            <h3 className="text-xl font-bold mb-3 text-slate-800">Gestión de Donaciones</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
               Administra recursos, origen y centros de acopio asignados para cada donación recibida.
             </p>
           </div>
 
-          {/* Módulo Logística */}
-          <div className="p-8 rounded-3xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+          <div className="p-8 rounded-3xl border border-slate-100 bg-white">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6">
               <Truck size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-3">Logística y Distribución</h3>
+            <h3 className="text-xl font-bold mb-3 text-slate-800">Logística y Distribución</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
               Control de inventario, planificación de envíos y seguimiento hasta la entrega final.
             </p>
           </div>
 
-          {/* Módulo Necesidades */}
-          <div className="p-8 rounded-3xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+          <div className="p-8 rounded-3xl border border-slate-100 bg-white">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6">
               <MapPin size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-3">Necesidades en Terreno</h3>
+            <h3 className="text-xl font-bold mb-3 text-slate-800">Necesidades en Terreno</h3>
             <p className="text-slate-500 text-sm leading-relaxed">
               Reporte de recursos específicos y ubicación geográfica de los damnificados.
             </p>
