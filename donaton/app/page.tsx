@@ -30,10 +30,10 @@ export default function Home() {
     
         </div>
         
-        <Link href="/admin">
-            <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition cursor-pointer">
-              Portal Admin
-            </button>
+        <Link href="/login">
+              <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition cursor-pointer">
+                Portal Admin
+              </button>
         </Link>
       </nav>
 

@@ -1,12 +1,12 @@
 import { NecesidadModelo } from '@/modelo/necesidades';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, AlertTriangle, CheckCircle2, Megaphone } from 'lucide-react';
+import { ArrowLeft, MapPin, AlertTriangle, CheckCircle2, Megaphone, Clock } from 'lucide-react';
 
 export default async function NecesidadesPage() {
   const necesidades = await NecesidadModelo.listar();
 
-  // Server Action para guardar
+  // Mantenemos solo el Server Action para CREAR (El público puede reportar)
   async function reportarNecesidad(formData: FormData) {
     'use server';
     const ubicacion = formData.get('ubicacion') as string;
@@ -14,14 +14,6 @@ export default async function NecesidadesPage() {
     const prioridad = formData.get('prioridad') as string;
     
     await NecesidadModelo.crear(ubicacion, descripcion, prioridad);
-    revalidatePath('/necesidades');
-  }
-
-  // Server Action para resolver
-  async function marcarResuelto(formData: FormData) {
-    'use server';
-    const id = parseInt(formData.get('id') as string);
-    await NecesidadModelo.resolver(id);
     revalidatePath('/necesidades');
   }
 
@@ -40,7 +32,7 @@ export default async function NecesidadesPage() {
 
       <main className="max-w-5xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        {/* COLUMNA IZQUIERDA: Formulario */}
+        {/* COLUMNA IZQUIERDA: Formulario Público */}
         <div className="lg:col-span-1">
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 sticky top-32">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
@@ -78,7 +70,7 @@ export default async function NecesidadesPage() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: Lista de Necesidades */}
+        {/* COLUMNA DERECHA: Lista de Necesidades (Solo Lectura) */}
         <div className="lg:col-span-2 space-y-6">
           <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mapa de Necesidades</h1>
@@ -108,14 +100,12 @@ export default async function NecesidadesPage() {
                   <p className="text-slate-700 font-medium">{item.descripcion}</p>
                 </div>
                 
+                {/* Visualizador de estado sin botón de acción */}
                 <div>
                   {item.estado === 'No Resuelto' ? (
-                    <form action={marcarResuelto}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <button type="submit" className="px-4 py-2 bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 font-bold rounded-xl transition-colors text-sm flex items-center gap-2">
-                        <CheckCircle2 size={16} /> Marcar Resuelto
-                      </button>
-                    </form>
+                    <span className="px-4 py-2 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm flex items-center gap-2 border border-slate-200">
+                      <Clock size={16} /> Pendiente
+                    </span>
                   ) : (
                     <span className="px-4 py-2 bg-emerald-50 text-emerald-700 font-bold rounded-xl text-sm flex items-center gap-2 border border-emerald-100">
                       <CheckCircle2 size={16} /> Resuelto
