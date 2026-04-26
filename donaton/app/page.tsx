@@ -24,13 +24,17 @@ export default function Home() {
           <Link href="/logistica" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
             Logística
           </Link>
-          
-          <span className="cursor-default">Necesidades</span>
+          <Link href="/necesidades" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
+              Necesidades
+          </Link>
+    
         </div>
         
-        <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition">
-          Portal Admin
-        </button>
+        <Link href="/admin">
+            <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition cursor-pointer">
+              Portal Admin
+            </button>
+        </Link>
       </nav>
 
       <main className="max-w-6xl mx-auto px-6">
