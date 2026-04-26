@@ -14,13 +14,17 @@ export default function Home() {
           <span className="text-2xl font-bold tracking-tight text-blue-700">Donaton</span>
         </div>
         
-        {/* Menú Superior Actualizado */}
+        {/* Menú Superior Actualizado con Logística */}
         <div className="hidden md:flex gap-10 text-sm font-semibold text-slate-500 items-center">
-          {/* Este enlace ahora te lleva a la tabla de productos */}
           <Link href="/lista-donaciones" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
             Donaciones
           </Link>
-          <span className="cursor-default">Logística</span>
+          
+          {/* Nuevo enlace a Logística */}
+          <Link href="/logistica" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
+            Logística
+          </Link>
+          
           <span className="cursor-default">Necesidades</span>
         </div>
         
