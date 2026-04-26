@@ -14,9 +14,12 @@ export default function Home() {
           <span className="text-2xl font-bold tracking-tight text-blue-700">Donaton</span>
         </div>
         
-        {/* Enlaces desactivados según tu requerimiento */}
-        <div className="hidden md:flex gap-10 text-sm font-semibold text-slate-500">
-          <span className="cursor-default">Donaciones</span>
+        {/* Menú Superior Actualizado */}
+        <div className="hidden md:flex gap-10 text-sm font-semibold text-slate-500 items-center">
+          {/* Este enlace ahora te lleva a la tabla de productos */}
+          <Link href="/lista-donaciones" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
+            Donaciones
+          </Link>
           <span className="cursor-default">Logística</span>
           <span className="cursor-default">Necesidades</span>
         </div>
@@ -42,7 +45,7 @@ export default function Home() {
               asegurando que la ayuda llegue oportunamente a las comunidades afectadas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              {/* Único botón activo que redirige al formulario */}
+              {/* Único botón activo que redirige al formulario de registro */}
               <Link href="/vista-donaciones">
                 <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-bold transition shadow-lg shadow-blue-200 cursor-pointer">
                   Registrar Donación <ArrowRight size={18} />

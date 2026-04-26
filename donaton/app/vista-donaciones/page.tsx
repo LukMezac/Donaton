@@ -1,5 +1,6 @@
 import { ProductoModelo } from '@/modelo/productos';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation'; // <-- Importamos redirect
 import Link from 'next/link';
 import { ArrowLeft, Heart, PackagePlus } from 'lucide-react';
 
@@ -11,9 +12,14 @@ export default async function RegistroDonacionPage() {
     const categoria = formData.get('categoria') as string;
     const cantidad = parseInt(formData.get('cantidad') as string);
     
-    // Ejecución del modelo MVC
+    // 1. Ejecución del modelo MVC para guardar en Docker
     await ProductoModelo.crear(nombre, categoria, cantidad);
-    revalidatePath('/vista-donaciones');
+    
+    // 2. Refrescar la caché de la lista de donaciones
+    revalidatePath('/lista-donaciones');
+    
+    // 3. Redirigir al usuario directamente a la tabla para ver su producto
+    redirect('/lista-donaciones'); 
   }
 
   return (
@@ -75,7 +81,6 @@ export default async function RegistroDonacionPage() {
                     <option value="Ropa">Ropa</option>
                     <option value="Higiene">Higiene</option>
                   </select>
-                  {/* Flecha personalizada para el select */}
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                   </div>
