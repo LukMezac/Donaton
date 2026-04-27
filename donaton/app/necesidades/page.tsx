@@ -1,10 +1,10 @@
-import { NecesidadModelo } from '@/modelo/necesidades';
+import { NecesidadService } from '@/modelo/necesidades';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, AlertTriangle, CheckCircle2, Megaphone, Clock } from 'lucide-react';
 
 export default async function NecesidadesPage() {
-  const necesidades = await NecesidadModelo.listar();
+  const necesidades = await NecesidadService.listar();
 
   // Mantenemos solo el Server Action para CREAR (El público puede reportar)
   async function reportarNecesidad(formData: FormData) {
@@ -13,7 +13,7 @@ export default async function NecesidadesPage() {
     const descripcion = formData.get('descripcion') as string;
     const prioridad = formData.get('prioridad') as string;
     
-    await NecesidadModelo.crear(ubicacion, descripcion, prioridad);
+    await NecesidadService.crear({ ubicacion, descripcion, prioridad });
     revalidatePath('/necesidades');
   }
 

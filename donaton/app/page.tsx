@@ -1,19 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, Truck, MapPin, ArrowRight, ShieldCheck } from "lucide-react";
-import { ProductoModelo } from '@/modelo/productos';
+import { ProductoService } from '@/modelo/productos';
 import AlertaDocker from '@/componentes/AlertaDocker';
 
 export default async function Home() {
   try {
-    // Verificación de salud del sistema con un tiempo límite (2 segundos)
-    // Esto evita que el usuario espere eternamente si Docker está caído
-    await Promise.race([
-      ProductoModelo.listar(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("TIMEOUT")), 2000)
-      )
-    ]);
+    // ✅ Solo verificamos conexión SIN timeout artificial
+    await ProductoService.listar();
 
     return (
       <div className="min-h-screen bg-white text-slate-900 font-sans">
@@ -46,7 +40,7 @@ export default async function Home() {
         </nav>
 
         <main className="max-w-6xl mx-auto px-6">
-          {/* Sección Hero */}
+          {/* Hero */}
           <header className="py-24 text-center md:text-left flex flex-col md:flex-row items-center gap-12">
             <div className="md:w-3/5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold mb-6 border border-blue-100">
@@ -79,7 +73,7 @@ export default async function Home() {
             </div>
           </header>
 
-          {/* Módulos principales */}
+          {/* Módulos */}
           <section className="py-20 grid md:grid-cols-3 gap-8 border-t border-slate-50">
             <div className="p-8 rounded-3xl border border-slate-100 bg-white">
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6">
@@ -121,7 +115,7 @@ export default async function Home() {
       </div>
     );
   } catch (error: any) {
-    // Si falla la conexión o hay timeout, mostramos la alerta visual
+    // ❌ Solo se muestra si REALMENTE falla el backend
     return <AlertaDocker />;
   }
 }

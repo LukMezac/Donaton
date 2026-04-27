@@ -1,4 +1,4 @@
-import { EnvioModelo } from '@/modelo/envios';
+import { EnvioService } from '@/modelo/envios';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ export default async function RegistroLogisticaPage() {
     const estado = formData.get('estado') as string;
 
     // Guardamos en la base de datos de Docker
-    await EnvioModelo.crear(destino, transportista, estado);
+    await EnvioService.crear({ destino, transportista, estado });
 
     // Refrescamos el panel de logística y volvemos
     revalidatePath('/logistica');

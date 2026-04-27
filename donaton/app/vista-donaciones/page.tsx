@@ -1,4 +1,4 @@
-import { ProductoModelo } from '@/modelo/productos';
+import { ProductoService } from '@/modelo/productos';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation'; // <-- Importamos redirect
 import Link from 'next/link';
@@ -13,7 +13,7 @@ export default async function RegistroDonacionPage() {
     const cantidad = parseInt(formData.get('cantidad') as string);
     
     // 1. Ejecución del modelo MVC para guardar en Docker
-    await ProductoModelo.crear(nombre, categoria, cantidad);
+    await ProductoService.crear({ nombre, categoria, cantidad });
     
     // 2. Refrescar la caché de la lista de donaciones
     revalidatePath('/lista-donaciones');

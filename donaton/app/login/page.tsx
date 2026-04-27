@@ -1,4 +1,4 @@
-import { UsuarioModelo } from '@/modelo/usuarios';
+import { UsuarioService } from '@/modelo/usuarios';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ export default function LoginPage() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const usuario = await UsuarioModelo.validarLogin(email, password);
+    const usuario = await UsuarioService.validarLogin(email, password);
 
     if (usuario) {
       // 1. Esperamos las cookies y luego creamos el token (Sintaxis Next.js 15+)

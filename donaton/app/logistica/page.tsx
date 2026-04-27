@@ -1,10 +1,10 @@
-import { EnvioModelo } from '@/modelo/envios';
+import { EnvioService } from '@/modelo/envios';
 import Link from 'next/link';
 import { ArrowLeft, Truck, MapPin, CheckCircle, Clock, Plus, AlertCircle } from 'lucide-react';
 
 export default async function LogisticaPage() {
   // Traemos los datos directamente desde PostgreSQL (Docker)
-  const envios = await EnvioModelo.listar();
+  const envios = await EnvioService.listar();
 
   // Calculamos los contadores dinámicamente leyendo la base de datos
   const pendientes = envios.filter((e: any) => e.estado === 'Pendiente').length;
