@@ -1,26 +1,35 @@
-const API_URL = "http://localhost:8090";
-
 export const NecesidadService = {
 
   async listar() {
-    const res = await fetch(`${API_URL}/necesidades`, {
-      cache: "no-store"
-    });
-
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    const res = await fetch('http://localhost:8090/necesidades');
+    return res.json();
   },
 
   async crear(data: any) {
-    const res = await fetch(`${API_URL}/necesidades`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+    await fetch('http://localhost:8090/necesidades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
+  },
 
-    return res.json();
+  async eliminar(id: number) {
+    await fetch(`http://localhost:8090/necesidades/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async actualizar(id: number, ubicacion: string, descripcion: string, prioridad: string, estado: string) {
+    await fetch(`http://localhost:8090/necesidades/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ubicacion,
+        descripcion,
+        prioridad,
+        estado
+      })
+    });
   }
 
 };

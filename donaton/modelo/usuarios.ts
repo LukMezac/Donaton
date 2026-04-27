@@ -1,8 +1,10 @@
-export const UsuarioService = {
+export const UsuarioModelo = {
   async validarLogin(email: string, password: string) {
-    if (email === "admin@donaton.cl" && password === "1234") {
-      return { rol: "ADMIN" };
+
+    if (email === "admin@donaton.cl" && password === "admin123") {
+      return { id: 1, email, rol: "admin" };
     }
+
     return null;
   }
 };

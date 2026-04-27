@@ -1,20 +1,30 @@
-const API_URL = "http://localhost:8090/api";
-
 export const EnvioService = {
+
   async listar() {
-    const res = await fetch(`${API_URL}/envios`);
+    const res = await fetch('http://localhost:8090/envios');
     return res.json();
   },
 
   async crear(data: any) {
-    const res = await fetch(`${API_URL}/envios`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+    await fetch('http://localhost:8090/envios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
+  },
 
-    return res.json();
+  async actualizarEstado(id: number, estado: string) {
+    await fetch(`http://localhost:8090/envios/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado })
+    });
+  },
+
+  async eliminar(id: number) {
+    await fetch(`http://localhost:8090/envios/${id}`, {
+      method: 'DELETE'
+    });
   }
+
 };
