@@ -1,18 +1,17 @@
-const API_URL = "http://localhost:8090/api";
+const API_URL = "http://localhost:8090";
 
 export const NecesidadService = {
+
   async listar() {
     const res = await fetch(`${API_URL}/necesidades`, {
       cache: "no-store"
     });
-    return res.json();
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   },
 
-  async crear(data: {
-    ubicacion: string;
-    descripcion: string;
-    prioridad: string;
-  }) {
+  async crear(data: any) {
     const res = await fetch(`${API_URL}/necesidades`, {
       method: "POST",
       headers: {
@@ -23,4 +22,5 @@ export const NecesidadService = {
 
     return res.json();
   }
+
 };
