@@ -8,14 +8,17 @@ export default async function RegistroLogisticaPage() {
   
   async function registrarDespacho(formData: FormData) {
     'use server';
+
     const destino = formData.get('destino') as string;
     const transportista = formData.get('transportista') as string;
-    const estado = formData.get('estado') as string;
 
-    // Guardamos en la base de datos de Docker
-    await EnvioService.crear({ destino, transportista, estado });
+    // 🔥 ESTADO FIJO
+    await EnvioService.crear({
+      destino,
+      transportista,
+      estado: "Pendiente"
+    });
 
-    // Refrescamos el panel de logística y volvemos
     revalidatePath('/logistica');
     redirect('/logistica');
   }
@@ -46,38 +49,48 @@ export default async function RegistroLogisticaPage() {
           </div>
 
           <form action={registrarDespacho} className="space-y-6">
+            
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Comunidad o Centro de Destino</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Comunidad o Centro de Destino
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <MapPin size={18} className="text-slate-400" />
                 </div>
-                <input name="destino" type="text" placeholder="Ej: Campamento Viña del Mar" required 
-                  className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all" />
+                <input
+                  name="destino"
+                  type="text"
+                  placeholder="Ej: Campamento Viña del Mar"
+                  required
+                  className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all"
+                />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Transportista / Vehículo</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Transportista / Vehículo
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Truck size={18} className="text-slate-400" />
                 </div>
-                <input name="transportista" type="text" placeholder="Ej: Furgón Patente AB-12-CD" required 
-                  className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all" />
+                <input
+                  name="transportista"
+                  type="text"
+                  placeholder="Ej: Furgón Patente AB-12-CD"
+                  required
+                  className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all"
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Estado del Envío</label>
-              <select name="estado" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all cursor-pointer">
-                <option value="Pendiente">Pendiente (En preparación)</option>
-                <option value="En Tránsito">En Tránsito (Salió a ruta)</option>
-                <option value="Entregado">Entregado</option>
-              </select>
-            </div>
 
-            <button type="submit" className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 mt-4">
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 mt-4"
+            >
               Registrar Salida de Ruta
             </button>
           </form>
