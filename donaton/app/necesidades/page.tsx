@@ -2,19 +2,38 @@ import { NecesidadService } from '@/modelo/necesidades';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, AlertTriangle, CheckCircle2, Megaphone, Clock } from 'lucide-react';
+import AlertaDocker from '@/componentes/AlertaDocker'; // <-- Importamos nuestra alerta de seguridad
 
 export default async function NecesidadesPage() {
-  const necesidades = await NecesidadService.listar();
+  
+  // 🔥 BLINDAJE: Protegemos la consulta a la base de datos
+  let necesidades: any[] = [];
+  try {
+    const data = await NecesidadService.listar();
+    necesidades = Array.isArray(data) ? data : [];
+  } catch (error) {
+    // Si Docker está apagado, mostramos la pantalla amigable
+    return <AlertaDocker />;
+  }
 
-  // Mantenemos solo el Server Action para CREAR (El público puede reportar)
+  // Server Action para CREAR (El público puede reportar)
   async function reportarNecesidad(formData: FormData) {
     'use server';
     const ubicacion = formData.get('ubicacion') as string;
     const descripcion = formData.get('descripcion') as string;
     const prioridad = formData.get('prioridad') as string;
     
-    await NecesidadService.crear({ ubicacion, descripcion, prioridad });
+    // 🚀 MEJORA INTEGRADA: Enviamos el estado Pendiente por defecto
+    await NecesidadService.crear({ 
+      ubicacion, 
+      descripcion, 
+      prioridad,
+      estado: 'Pendiente' // Aseguramos el estado inicial
+    });
+    
+    // 🚀 MEJORA INTEGRADA: Revalidamos ambas rutas para que el admin lo vea al instante
     revalidatePath('/necesidades');
+    revalidatePath('/admin');
   }
 
   return (
@@ -102,7 +121,7 @@ export default async function NecesidadesPage() {
                 
                 {/* Visualizador de estado sin botón de acción */}
                 <div>
-                  {item.estado === 'No Resuelto' ? (
+                  {item.estado === 'No Resuelto' || item.estado === 'Pendiente' ? (
                     <span className="px-4 py-2 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm flex items-center gap-2 border border-slate-200">
                       <Clock size={16} /> Pendiente
                     </span>

@@ -19,16 +19,11 @@ export const NecesidadService = {
     });
   },
 
-  async actualizar(id: number, ubicacion: string, descripcion: string, prioridad: string, estado: string) {
+  async actualizar(id: number, data: any) {
     await fetch(`http://localhost:8090/necesidades/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ubicacion,
-        descripcion,
-        prioridad,
-        estado
-      })
+      body: JSON.stringify(data)
     });
   }
 

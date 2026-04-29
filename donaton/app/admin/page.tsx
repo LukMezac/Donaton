@@ -70,13 +70,12 @@ export default async function AdminPanelPage() {
   async function resolverNecesidad(formData: FormData) {
     'use server';
     const id = Number(formData.get('id'));
-    await NecesidadService.actualizar(
-      id,
-      formData.get('ubicacion') as string,
-      formData.get('descripcion') as string,
-      formData.get('prioridad') as string,
-      'Resuelto'
-    );
+    await NecesidadService.actualizar(id, {
+          ubicacion: formData.get('ubicacion') as string,
+          descripcion: formData.get('descripcion') as string,
+          prioridad: formData.get('prioridad') as string,
+          estado: formData.get('estado') as string
+        });
     revalidatePath('/admin');
     revalidatePath('/necesidades');
   }

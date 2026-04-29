@@ -5,6 +5,16 @@ export const ProductoService = {
     return res.json();
   },
 
+  async crear(producto: any) {
+    await fetch('http://localhost:8090/productos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(producto)
+    });
+  },
+
   async eliminar(id: number) {
     await fetch(`http://localhost:8090/productos/${id}`, {
       method: 'DELETE'
@@ -14,7 +24,9 @@ export const ProductoService = {
   async actualizarCantidad(id: number, cantidad: number) {
     await fetch(`http://localhost:8090/productos/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ cantidad })
     });
   }
