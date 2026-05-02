@@ -1,36 +1,55 @@
-import { query } from '@/lib/db';
-import { DonacionFactory } from './factory'; // <-- Importamos tu patrón Factory
+const URL = "http://127.0.0.1:8090/productos";
 
-export const ProductoModelo = {
-  async listar() {
-    const res = await query('SELECT * FROM productos ORDER BY id DESC');
-    return res.rows;
+export const ProductoService = {
+
+  async listar(token?: string) {
+    try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(URL, {
+        cache: "no-store",
+        headers
+      });
+
+      if (!res.ok) throw new Error("Error al listar");
+      return await res.json();
+
+    } catch (error) {
+      console.error("🔥 ERROR LISTAR:", error);
+      return [];
+    }
   },
 
-  // Usamos el Factory antes de insertar en la BD
-  async crear(nombre: string, categoria: string, cantidad: number) {
-    
-    // 1. Aplicamos el Patrón Factory Method (como en tu diagrama)
-    const nuevoRecurso = DonacionFactory.crearRecurso(nombre, categoria, cantidad);
-    
-    // Aquí podrías imprimir en consola la lógica específica (opcional)
-    console.log(nuevoRecurso.procesar()); 
+  async crear(data: any, token: string) {
+    try {
 
-    // 2. Aplicamos el Patrón Repository (Persistencia)
-    const res = await query(
-      'INSERT INTO productos (nombre, categoria, cantidad) VALUES ($1, $2, $3) RETURNING *',
-      [nuevoRecurso.nombre, nuevoRecurso.categoria, nuevoRecurso.cantidad]
-    );
-    return res.rows[0];
-  },
+      console.log("📦 Enviando producto:", data);
 
-  async actualizarCantidad(id: number, cantidad: number) {
-    const res = await query('UPDATE productos SET cantidad = $1 WHERE id = $2 RETURNING *', [cantidad, id]);
-    return res.rows[0];
-  },
+      const res = await fetch(URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          nombre: data.nombre,
+          categoria: data.categoria,
+          cantidad: Number(data.cantidad)
+        })
+      });
 
-  async eliminar(id: number) {
-    await query('DELETE FROM productos WHERE id = $1', [id]);
-    return true;
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ ERROR CREAR:", res.status, text);
+        throw new Error("Error al crear");
+      }
+
+      return await res.json();
+
+    } catch (error) {
+      console.error("🔥 ERROR CREAR PRODUCTO:", error);
+      throw error;
+    }
   }
 };

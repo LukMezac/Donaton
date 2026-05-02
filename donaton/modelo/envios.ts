@@ -1,33 +1,30 @@
-import { query } from '@/lib/db';
+const URL = "http://127.0.0.1:8090/envios"; 
 
-export const EnvioModelo = {
-  // 1. Obtener todos los despachos
-  async listar() {
-    const res = await query('SELECT * FROM envios ORDER BY id DESC');
-    return res.rows;
+export const EnvioService = {
+  // LISTAR: Ahora no falla si no hay token (público)
+  async listar(token?: string) {
+    try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(URL, { cache: "no-store", headers });
+      return res.ok ? await res.json() : [];
+    } catch (error) {
+      return [];
+    }
   },
 
-  // 2. Crear un nuevo despacho
-  async crear(destino: string, transportista: string, estado: string) {
-    const res = await query(
-      'INSERT INTO envios (destino, transportista, estado) VALUES ($1, $2, $3) RETURNING *',
-      [destino, transportista, estado]
-    );
-    return res.rows[0];
-  },
-
-  // 3. NUEVO: Actualizar el estado de un envío
-  async actualizarEstado(id: number, nuevoEstado: string) {
-    const res = await query(
-      'UPDATE envios SET estado = $1 WHERE id = $2 RETURNING *',
-      [nuevoEstado, id]
-    );
-    return res.rows[0];
-  },
-
-  // 4. NUEVO: Eliminar un envío
-  async eliminar(id: number) {
-    await query('DELETE FROM envios WHERE id = $1', [id]);
-    return true;
+  // CREAR: Requiere token obligatoriamente
+  async crear(data: any, token: string) {
+    const res = await fetch(URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}: No autorizado`);
+    return await res.json();
   }
 };

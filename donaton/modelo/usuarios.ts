@@ -1,13 +1,70 @@
-import { query } from '@/lib/db';
+const BASE_URL = "http://localhost:8090/auth";
 
 export const UsuarioModelo = {
-  async validarLogin(email: string, password: string) {
-    // En un sistema real la contraseña estaría encriptada, 
-    // pero para el MVP usaremos texto plano para probar rápido.
-    const res = await query(
-      'SELECT id, email, rol FROM usuarios WHERE email = $1 AND password = $2',
-      [email, password]
-    );
-    return res.rows[0]; // Devuelve el usuario si existe, o undefined si se equivocó
+
+  // 🔐 LOGIN COMPLETO
+  async validarLoginCompleto(username: string, password: string) {
+    try {
+      const res = await fetch(`${BASE_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        }),
+      });
+
+      // ❌ Error HTTP
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Error login:", error);
+        return null;
+      }
+
+      // ✅ Respuesta correcta
+      const data = await res.json();
+
+      /*
+        data = {
+          token: "...",
+          rol: "USER" | "ADMIN",
+          nombre: "..."
+        }
+      */
+
+      return data;
+
+    } catch (error) {
+      console.error("Error conexión login:", error);
+      return null;
+    }
+  },
+
+  // 🧾 REGISTRO
+  async registrar(datos: { usuario: string; email: string; password: string }) {
+    try {
+      const res = await fetch(`${BASE_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(datos),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Error registro:", error);
+        return false;
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error("Error conexión registro:", error);
+      return false;
+    }
   }
+
 };

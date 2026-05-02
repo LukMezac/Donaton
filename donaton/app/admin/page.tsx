@@ -1,234 +1,210 @@
-import { EnvioModelo } from '@/modelo/envios';
-import { NecesidadModelo } from '@/modelo/necesidades';
-import { ProductoModelo } from '@/modelo/productos'; // <-- Importamos el modelo de productos
-import { revalidatePath } from 'next/cache';
-import Link from 'next/link';
-import { ArrowLeft, ShieldAlert, Trash2, ArrowRightCircle, CheckCircle2, AlertTriangle, Truck, Package, RefreshCw } from 'lucide-react';
+'use client';
 
-export default async function AdminPanelPage() {
-  const envios = await EnvioModelo.listar();
-  const necesidades = await NecesidadModelo.listar();
-  const productos = await ProductoModelo.listar(); // <-- Obtenemos el inventario
+import { useState, useEffect } from 'react';
+import {
+  LayoutDashboard, Package, Truck, ClipboardList,
+  RefreshCcw, Trash2, CheckCircle2, Search,
+  Activity, ChevronRight, Edit3, Check
+} from 'lucide-react';
 
-  // --- ACTIONS PARA INVENTARIO (DONACIONES) ---
-  async function actualizarStock(formData: FormData) {
-    'use server';
-    const id = parseInt(formData.get('id') as string);
-    const nuevaCantidad = parseInt(formData.get('cantidad') as string);
-    await ProductoModelo.actualizarCantidad(id, nuevaCantidad);
-    revalidatePath('/admin');
-    revalidatePath('/lista-donaciones'); // Actualiza la vista pública
-  }
+// --- COMPONENTES Y FUNCIONES DE APOYO (Puestos arriba para evitar errores) ---
 
-  async function eliminarProducto(formData: FormData) {
-    'use server';
-    await ProductoModelo.eliminar(parseInt(formData.get('id') as string));
-    revalidatePath('/admin');
-    revalidatePath('/lista-donaciones');
-  }
+function NavItem({ icon, label, active, onClick, color }: any) {
+    const colors: any = { 
+      blue: 'text-blue-600 bg-blue-50', 
+      rose: 'text-rose-600 bg-rose-50', 
+      indigo: 'text-indigo-600 bg-indigo-50' 
+    };
+    return (
+      <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl font-extrabold text-sm transition-all group ${active ? colors[color] : 'text-slate-400 hover:bg-slate-50'}`}>
+        <div className="flex items-center gap-4">{icon}{label}</div>
+        <ChevronRight size={16} className={`transition-all ${active ? 'opacity-100' : 'opacity-0 -translate-x-2'}`} />
+      </button>
+    );
+}
 
-  // --- ACTIONS PARA LOGÍSTICA ---
-  async function avanzarEstadoEnvio(formData: FormData) {
-    'use server';
-    const id = parseInt(formData.get('id') as string);
-    const actual = formData.get('estadoActual') as string;
-    let nuevo = actual === 'Pendiente' ? 'En Tránsito' : 'Entregado';
-    await EnvioModelo.actualizarEstado(id, nuevo);
-    revalidatePath('/admin');
-    revalidatePath('/logistica');
-  }
+function getBadgeStyle(vista: string, valor?: string) {
+    if (valor === 'Entregado' || valor === 'Resuelto') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (valor === 'En Tránsito') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (valor === 'Pendiente' || valor === 'Alta') return 'bg-rose-100 text-rose-700 border-rose-200';
+    return 'bg-slate-100 text-slate-500 border-slate-200';
+}
 
-  async function eliminarEnvio(formData: FormData) {
-    'use server';
-    await EnvioModelo.eliminar(parseInt(formData.get('id') as string));
-    revalidatePath('/admin');
-    revalidatePath('/logistica');
-  }
+// --- COMPONENTE PRINCIPAL ---
 
-  // --- ACTIONS PARA NECESIDADES ---
-  async function resolverNecesidad(formData: FormData) {
-    'use server';
-    const id = parseInt(formData.get('id') as string);
-    await NecesidadModelo.actualizar(id, formData.get('ubicacion') as string, formData.get('descripcion') as string, formData.get('prioridad') as string, 'Resuelto');
-    revalidatePath('/admin');
-    revalidatePath('/necesidades');
-  }
+const URLS = {
+  INVENTARIO: 'http://127.0.0.1:8090/productos',
+  NECESIDADES: 'http://127.0.0.1:8090/necesidades',
+  LOGISTICA: 'http://127.0.0.1:8090/envios',
+};
 
-  async function eliminarNecesidad(formData: FormData) {
-    'use server';
-    await NecesidadModelo.eliminar(parseInt(formData.get('id') as string));
-    revalidatePath('/admin');
-    revalidatePath('/necesidades');
-  }
+const ESTADOS_LOGISTICA = ['Pendiente', 'En Tránsito', 'Entregado'];
+
+export default function AdminPage() {
+  const [data, setData] = useState<any[]>([]);
+  const [vistaActiva, setVistaActiva] = useState<'INVENTARIO' | 'NECESIDADES' | 'LOGISTICA'>('INVENTARIO');
+  const [cargando, setCargando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [nuevoValor, setNuevoValor] = useState<number>(0);
+
+  const fetchData = async () => {
+    setCargando(true);
+    try {
+      const token = document.cookie.split('; ').find(r => r.startsWith('token_acceso='))?.split('=')[1];
+      const res = await fetch(URLS[vistaActiva], {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const json = await res.json();
+      setData(Array.isArray(json) ? json : []);
+    } catch (e) {
+      console.error(e);
+      setData([]);
+    }
+    setCargando(false);
+  };
+
+  useEffect(() => { fetchData(); }, [vistaActiva]);
+
+  // Ciclo para Logística
+  const handleCicloLogistica = (id: number, estadoActual: string) => {
+    const currentIndex = ESTADOS_LOGISTICA.indexOf(estadoActual || 'Pendiente');
+    const nextIndex = (currentIndex + 1) % ESTADOS_LOGISTICA.length;
+    const nuevoEstado = ESTADOS_LOGISTICA[nextIndex];
+    setData(prev => prev.map(item => item.id === id ? { ...item, prioridad: nuevoEstado } : item));
+  };
+
+  // Ticket para Necesidades
+  const handleResolverNecesidad = (id: number) => {
+    setData(prev => prev.map(item => 
+      item.id === id ? { ...item, estado: 'Resuelto', prioridad: 'Resuelto' } : item
+    ));
+  };
+
+  const filteredData = data.filter(item => {
+    const term = (item.nombre || item.descripcion || item.destino || '').toLowerCase();
+    return term.includes(busqueda.toLowerCase());
+  });
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-900 pb-20">
-      <nav className="px-8 py-6 bg-slate-900 text-white sticky top-0 z-50 flex items-center justify-between shadow-xl">
-        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white font-semibold text-sm transition group">
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Salir
-        </Link>
-        <div className="flex items-center gap-2 font-bold text-sky-400">
-          <ShieldAlert size={24} />
-          <span className="tracking-tighter text-2xl uppercase">Admin Donaton</span>
+    <div className="min-h-screen bg-[#fcfdfe] flex text-slate-900 font-sans">
+      
+      {/* SIDEBAR */}
+      <aside className="w-80 bg-white border-r border-slate-100 flex flex-col hidden lg:flex relative z-20">
+        <div className="p-10 flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <LayoutDashboard className="text-white" size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight">Donaton</h1>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Admin Central</p>
+          </div>
         </div>
-      </nav>
 
-      <main className="max-w-6xl mx-auto py-12 px-6 space-y-16">
+        <nav className="flex-1 px-6 space-y-3">
+          <NavItem icon={<Package size={22} />} label="Inventario" active={vistaActiva === 'INVENTARIO'} onClick={() => setVistaActiva('INVENTARIO')} color="blue" />
+          <NavItem icon={<ClipboardList size={22} />} label="Necesidades" active={vistaActiva === 'NECESIDADES'} onClick={() => setVistaActiva('NECESIDADES')} color="rose" />
+          <NavItem icon={<Truck size={22} />} label="Logística" active={vistaActiva === 'LOGISTICA'} onClick={() => setVistaActiva('LOGISTICA')} color="indigo" />
+        </nav>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col">
         
-        {/* SECCIÓN 1: GESTIÓN DE INVENTARIO */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-indigo-600 text-white rounded-lg"><Package size={20}/></div>
-            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Inventario de Donaciones</h2>
+        {/* TOPBAR - Letra oscura corregida */}
+        <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between px-12 sticky top-0 z-10">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              type="text" 
+              placeholder={`Filtrar ${vistaActiva.toLowerCase()}...`}
+              className="w-[400px] pl-12 pr-6 py-3.5 bg-slate-100/50 border-none rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
           </div>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b">
-                <tr>
-                  <th className="p-6">Producto</th>
-                  <th className="p-6">Categoría</th>
-                  <th className="p-6 text-center">Editar Stock</th>
-                  <th className="p-6 text-center">Eliminar</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {productos.map((prod: any) => (
-                  <tr key={prod.id} className="hover:bg-slate-50/50">
-                    <td className="p-6 font-bold text-slate-800">{prod.nombre}</td>
-                    <td className="p-6 text-xs text-slate-500">{prod.categoria}</td>
-                    <td className="p-6">
-                      {/* Formulario rápido para editar la cantidad */}
-                      <form action={actualizarStock} className="flex items-center justify-center gap-2">
-                        <input type="hidden" name="id" value={prod.id} />
-                        <input 
-                          type="number" 
-                          name="cantidad" 
-                          defaultValue={prod.cantidad} 
-                          className="w-20 p-2 text-center border border-slate-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500" 
-                        />
-                        <button type="submit" title="Actualizar Stock" className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition">
-                          <RefreshCw size={16} />
-                        </button>
-                      </form>
-                    </td>
-                    <td className="p-6 flex justify-center">
-                      <form action={eliminarProducto}>
-                        <input type="hidden" name="id" value={prod.id} />
-                        <button type="submit" className="p-2 text-slate-300 hover:text-red-600 transition"><Trash2 size={18}/></button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+          <button onClick={fetchData} className="flex items-center gap-3 bg-white border border-slate-200 px-6 py-3 rounded-2xl text-sm font-extrabold hover:bg-slate-50 transition-all shadow-sm">
+            <RefreshCcw size={18} className={cargando ? 'animate-spin' : ''} />
+            Sincronizar Datos
+          </button>
+        </header>
 
-        {/* SECCIÓN 2: GESTIÓN DE LOGÍSTICA */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-600 text-white rounded-lg"><Truck size={20}/></div>
-            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Control de Envíos</h2>
+        <div className="p-12 text-slate-900">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <div className="flex items-center gap-3 mb-2 text-blue-600 font-black uppercase text-[10px] tracking-[0.2em]"><Activity size={16} /> Monitoreo en tiempo real</div>
+              <h2 className="text-4xl font-black tracking-tight capitalize">{vistaActiva.toLowerCase()}</h2>
+            </div>
+            <div className="bg-white border border-slate-100 px-5 py-2.5 rounded-2xl text-xs font-black text-slate-400">{filteredData.length} REGISTROS</div>
           </div>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b">
-                <tr>
-                  <th className="p-6">ID</th>
-                  <th className="p-6">Destino / Transportista</th>
-                  <th className="p-6">Estado Actual</th>
-                  <th className="p-6 text-center">Acciones</th>
+
+          <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/40 border border-slate-50 overflow-hidden">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-10 py-7 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Información General</th>
+                  <th className="px-10 py-7 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Métrica / Estado</th>
+                  <th className="px-10 py-7 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {envios.map((envio: any) => (
-                  <tr key={envio.id} className="hover:bg-slate-50/50">
-                    <td className="p-6 font-mono text-xs text-slate-400">#E{envio.id}</td>
-                    <td className="p-6">
-                      <p className="font-bold text-slate-800">{envio.destino}</p>
-                      <p className="text-xs text-slate-500">{envio.transportista}</p>
-                    </td>
-                    <td className="p-6">
-                      <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-xs font-black border border-blue-100 uppercase">{envio.estado}</span>
-                    </td>
-                    <td className="p-6 flex justify-center gap-2">
-                      {envio.estado !== 'Entregado' && (
-                        <form action={avanzarEstadoEnvio}>
-                          <input type="hidden" name="id" value={envio.id} /><input type="hidden" name="estadoActual" value={envio.estado} />
-                          <button className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition flex items-center gap-2">
-                            Avanzar <ArrowRightCircle size={14}/>
+              <tbody className="divide-y divide-slate-50">
+                {!cargando && filteredData.map((item) => (
+                    <tr key={item.id} className="group hover:bg-slate-50/40 transition-all">
+                      <td className="px-10 py-8">
+                        <div className="flex items-center gap-5">
+                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-400 text-xs">{item.id}</div>
+                          <div>
+                            <div className="font-extrabold text-slate-800 text-lg">
+                              {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : (item.nombre || item.descripcion || "Recurso")}
+                            </div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase">
+                              {vistaActiva === 'LOGISTICA' ? `Chofer: ${item.transportista || 'N/A'}` : 'Entidad del sistema'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="px-10 py-8 text-center">
+                        {editandoId === item.id ? (
+                           <input type="number" value={nuevoValor} onChange={(e) => setNuevoValor(Number(e.target.value))} className="w-24 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl outline-none text-center font-black text-blue-700" autoFocus />
+                        ) : (
+                          <button
+                            onClick={() => vistaActiva === 'LOGISTICA' && handleCicloLogistica(item.id, item.prioridad)}
+                            disabled={vistaActiva !== 'LOGISTICA'}
+                            className={`px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border ${vistaActiva === 'LOGISTICA' ? 'hover:scale-105 active:scale-95 cursor-pointer shadow-sm' : ''} ${getBadgeStyle(vistaActiva, item.prioridad || item.estado)}`}
+                          >
+                            {/* Ajuste para que diga Resuelto visualmente */}
+                            {item.estado === 'Resuelto' || item.prioridad === 'Resuelto' 
+                                ? '✅ Resuelto' 
+                                : (item.stock ?? item.cantidad ?? item.prioridad ?? item.estado ?? '-')}
+                            {vistaActiva === 'INVENTARIO' && item.estado !== 'Resuelto' ? ' UNID.' : ''}
                           </button>
-                        </form>
-                      )}
-                      <form action={eliminarEnvio}>
-                        <input type="hidden" name="id" value={envio.id} />
-                        <button className="p-2 text-slate-300 hover:text-red-600 transition"><Trash2 size={18}/></button>
-                      </form>
-                    </td>
-                  </tr>
+                        )}
+                      </td>
+
+                      <td className="px-10 py-8 text-right">
+                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                          {/* Lápiz para Inventario */}
+                          {vistaActiva === 'INVENTARIO' && (
+                             editandoId === item.id ? (
+                                <button className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><Check size={20} /></button>
+                             ) : (
+                                <button onClick={() => { setEditandoId(item.id); setNuevoValor(item.stock || item.cantidad || 0); }} className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Edit3 size={20} /></button>
+                             )
+                          )}
+                          {/* Ticket para Necesidades */}
+                          {vistaActiva === 'NECESIDADES' && item.estado !== 'Resuelto' && (
+                            <button onClick={() => handleResolverNecesidad(item.id)} className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 size={20} /></button>
+                          )}
+                          <button className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={20} /></button>
+                        </div>
+                      </td>
+                    </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
-
-        {/* SECCIÓN 3: GESTIÓN DE NECESIDADES */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-rose-600 text-white rounded-lg"><AlertTriangle size={20}/></div>
-            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Gestión de Necesidades</h2>
-          </div>
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest border-b">
-                <tr>
-                  <th className="p-6">Ubicación / Descripción</th>
-                  <th className="p-6 text-center">Prioridad</th>
-                  <th className="p-6">Estado</th>
-                  <th className="p-6 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {necesidades.map((n: any) => (
-                  <tr key={n.id} className="hover:bg-slate-50/50">
-                    <td className="p-6 max-w-xs">
-                      <p className="font-bold text-slate-800">{n.ubicacion}</p>
-                      <p className="text-xs text-slate-500 line-clamp-1">{n.descripcion}</p>
-                    </td>
-                    <td className="p-6 text-center">
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded border uppercase ${n.prioridad === 'Alta' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-500'}`}>
-                        {n.prioridad}
-                      </span>
-                    </td>
-                    <td className="p-6">
-                      <span className={`text-xs font-bold ${n.estado === 'Resuelto' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        {n.estado}
-                      </span>
-                    </td>
-                    <td className="p-6 flex justify-center gap-2">
-                      {n.estado !== 'Resuelto' && (
-                        <form action={resolverNecesidad}>
-                          <input type="hidden" name="id" value={n.id} />
-                          <input type="hidden" name="ubicacion" value={n.ubicacion} />
-                          <input type="hidden" name="descripcion" value={n.descripcion} />
-                          <input type="hidden" name="prioridad" value={n.prioridad} />
-                          <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-2">
-                            Resolver <CheckCircle2 size={14}/>
-                          </button>
-                        </form>
-                      )}
-                      <form action={eliminarNecesidad}>
-                        <input type="hidden" name="id" value={n.id} />
-                        <button className="p-2 text-slate-300 hover:text-red-600 transition"><Trash2 size={18}/></button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
+        </div>
       </main>
     </div>
   );

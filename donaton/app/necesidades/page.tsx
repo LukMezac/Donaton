@@ -1,19 +1,44 @@
-import { NecesidadModelo } from '@/modelo/necesidades';
+import { NecesidadService } from '@/modelo/necesidades';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, AlertTriangle, CheckCircle2, Megaphone, Clock } from 'lucide-react';
+import { cookies } from 'next/headers'; // 🔥 1. Importamos cookies
+import AlertaDocker from '@/componentes/AlertaDocker';
 
 export default async function NecesidadesPage() {
-  const necesidades = await NecesidadModelo.listar();
+  
+  // 🔥 2. OBTENER EL TOKEN REAL
+  const token = (await cookies()).get('token_acceso')?.value;
 
-  // Mantenemos solo el Server Action para CREAR (El público puede reportar)
+  // 3. BLINDAJE: Consulta a la base de datos PASANDO EL TOKEN
+  let necesidades: any[] = [];
+  try {
+    // ✅ ¡CORREGIDO!: Le pasamos el token al listar
+    const data = await NecesidadService.listar(token); 
+    necesidades = Array.isArray(data) ? data : [];
+  } catch (error) {
+    return <AlertaDocker />;
+  }
+
+  // Server Action para CREAR
   async function reportarNecesidad(formData: FormData) {
     'use server';
+    
+    // 🔥 4. También necesitamos el token aquí para el POST
+    const tokenAction = (await cookies()).get('token_acceso')?.value;
+
     const ubicacion = formData.get('ubicacion') as string;
     const descripcion = formData.get('descripcion') as string;
     const prioridad = formData.get('prioridad') as string;
     
-    await NecesidadModelo.crear(ubicacion, descripcion, prioridad);
+    // ✅ ¡CORREGIDO!: Pasamos el objeto Y el token al crear
+    await NecesidadService.crear({ 
+      ubicacion, 
+      descripcion, 
+      prioridad,
+      estado: 'Pendiente'
+    }, tokenAction);
+    
     revalidatePath('/necesidades');
   }
 
@@ -32,54 +57,52 @@ export default async function NecesidadesPage() {
 
       <main className="max-w-5xl mx-auto py-12 px-6 grid grid-cols-1 lg:grid-cols-3 gap-10">
         
-        {/* COLUMNA IZQUIERDA: Formulario Público */}
+        {/* COLUMNA IZQUIERDA: Formulario */}
         <div className="lg:col-span-1">
           <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 sticky top-32">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
               <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
                 <Megaphone size={24} />
               </div>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Reportar Alerta</h2>
-              </div>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Reportar Alerta</h2>
             </div>
 
             <form action={reportarNecesidad} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Ubicación Afectada</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Ubicación</label>
                 <input name="ubicacion" type="text" required placeholder="Ej: Sector Los Pinos" 
                   className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Recursos Necesitados</label>
-                <textarea name="descripcion" required placeholder="Ej: Se necesitan 50 bidones de agua y pañales..." rows={3}
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Descripción</label>
+                <textarea name="descripcion" required placeholder="Ej: Agua y pañales..." rows={3}
                   className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm resize-none"></textarea>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nivel de Prioridad</label>
-                <select name="prioridad" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm cursor-pointer">
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Prioridad</label>
+                <select name="prioridad" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm">
                   <option value="Alta">Alta (Crítica)</option>
                   <option value="Media">Media</option>
                   <option value="Baja">Baja</option>
                 </select>
               </div>
-              <button type="submit" className="w-full bg-rose-600 text-white font-bold py-4 rounded-xl hover:bg-rose-700 transition-all flex justify-center gap-2 mt-2 shadow-lg shadow-rose-200">
+              <button type="submit" className="w-full bg-rose-600 text-white font-bold py-4 rounded-xl hover:bg-rose-700 transition-all shadow-lg shadow-rose-200">
                 Emitir Reporte
               </button>
             </form>
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: Lista de Necesidades (Solo Lectura) */}
+        {/* COLUMNA DERECHA: Lista */}
         <div className="lg:col-span-2 space-y-6">
           <div className="mb-8">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mapa de Necesidades</h1>
-            <p className="text-slate-500 mt-2">Requerimientos actuales levantados desde los centros de acopio y campamentos.</p>
+            <p className="text-slate-500 mt-2">Requerimientos actuales de centros de acopio.</p>
           </div>
 
           {necesidades.length === 0 ? (
              <div className="bg-white p-10 rounded-3xl border border-slate-100 text-center text-slate-400 font-medium">
-               No hay alertas activas en este momento.
+               No hay alertas activas o falta autenticación.
              </div>
           ) : (
             necesidades.map((item: any) => (
@@ -100,9 +123,8 @@ export default async function NecesidadesPage() {
                   <p className="text-slate-700 font-medium">{item.descripcion}</p>
                 </div>
                 
-                {/* Visualizador de estado sin botón de acción */}
                 <div>
-                  {item.estado === 'No Resuelto' ? (
+                  {item.estado === 'Pendiente' ? (
                     <span className="px-4 py-2 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm flex items-center gap-2 border border-slate-200">
                       <Clock size={16} /> Pendiente
                     </span>
@@ -116,7 +138,6 @@ export default async function NecesidadesPage() {
             ))
           )}
         </div>
-
       </main>
     </div>
   );

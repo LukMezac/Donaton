@@ -1,31 +1,89 @@
-import { query } from '@/lib/db';
+const URL = "http://127.0.0.1:8090/necesidades";
 
-export const NecesidadModelo = {
-  async listar() {
-    const res = await query('SELECT * FROM necesidades ORDER BY id DESC');
-    return res.rows;
+export const NecesidadService = {
+
+  // ✅ LISTAR (PÚBLICO)
+  async listar(token?: string) {
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+
+      // 👇 token opcional
+      if (token && token !== "undefined") {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(URL, {
+        cache: "no-store",
+        headers
+      });
+
+      if (!res.ok) {
+        console.error("❌ ERROR BACKEND:", res.status);
+        return [];
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("🔥 FALLO FETCH NECESIDADES:", error);
+      return [];
+    }
   },
 
-  async crear(ubicacion: string, descripcion: string, prioridad: string) {
-    const res = await query(
-      'INSERT INTO necesidades (ubicacion, descripcion, prioridad, estado) VALUES ($1, $2, $3, $4) RETURNING *',
-      [ubicacion, descripcion, prioridad, 'No Resuelto']
-    );
-    return res.rows[0];
+  // ✅ CREAR (USER o ADMIN)
+  async crear(data: any, token?: string) {
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token && token !== "undefined") {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("🔥 ERROR CREAR NECESIDAD:", error);
+      throw error;
+    }
   },
 
-  // NUEVO: Para editar cualquier campo de la necesidad
-  async actualizar(id: number, ubicacion: string, descripcion: string, prioridad: string, estado: string) {
-    const res = await query(
-      'UPDATE necesidades SET ubicacion = $1, descripcion = $2, prioridad = $3, estado = $4 WHERE id = $5 RETURNING *',
-      [ubicacion, descripcion, prioridad, estado, id]
-    );
-    return res.rows[0];
+  // 🔒 SOLO ADMIN
+  async actualizar(id: number, data: any, token: string) {
+    const res = await fetch(`${URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error("Error al actualizar");
+    return true;
   },
 
-  // NUEVO: Para borrar reportes falsos o antiguos
-  async eliminar(id: number) {
-    await query('DELETE FROM necesidades WHERE id = $1', [id]);
+  // 🔒 SOLO ADMIN
+  async eliminar(id: number, token: string) {
+    const res = await fetch(`${URL}/${id}`, {
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) throw new Error("Error al eliminar");
     return true;
   }
 };
