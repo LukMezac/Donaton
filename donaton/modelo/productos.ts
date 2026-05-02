@@ -1,34 +1,55 @@
+const URL = "http://127.0.0.1:8090/productos";
+
 export const ProductoService = {
 
-  async listar() {
-    const res = await fetch('http://localhost:8090/productos');
-    return res.json();
+  async listar(token?: string) {
+    try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(URL, {
+        cache: "no-store",
+        headers
+      });
+
+      if (!res.ok) throw new Error("Error al listar");
+      return await res.json();
+
+    } catch (error) {
+      console.error("🔥 ERROR LISTAR:", error);
+      return [];
+    }
   },
 
-  async crear(producto: any) {
-    await fetch('http://localhost:8090/productos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(producto)
-    });
-  },
+  async crear(data: any, token: string) {
+    try {
 
-  async eliminar(id: number) {
-    await fetch(`http://localhost:8090/productos/${id}`, {
-      method: 'DELETE'
-    });
-  },
+      console.log("📦 Enviando producto:", data);
 
-  async actualizarCantidad(id: number, cantidad: number) {
-    await fetch(`http://localhost:8090/productos/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ cantidad })
-    });
+      const res = await fetch(URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          nombre: data.nombre,
+          categoria: data.categoria,
+          cantidad: Number(data.cantidad)
+        })
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ ERROR CREAR:", res.status, text);
+        throw new Error("Error al crear");
+      }
+
+      return await res.json();
+
+    } catch (error) {
+      console.error("🔥 ERROR CREAR PRODUCTO:", error);
+      throw error;
+    }
   }
-
 };

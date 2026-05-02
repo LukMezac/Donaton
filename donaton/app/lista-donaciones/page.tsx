@@ -1,18 +1,34 @@
 import { ProductoService } from '@/modelo/productos';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Package, Plus } from 'lucide-react';
 
 export default async function ListaDonacionesPage() {
-  let productos: any[] = [];
 
+  // 🔥 1. OBTENER TOKEN
+  const token = (await cookies()).get('token_acceso')?.value;
+
+  // 🔥 2. PROTEGER RUTA
+  if (!token) {
+    redirect('/login');
+  }
+
+  // 🔥 3. LLAMAR AL BACKEND
+  let productos: any[] = [];
   try {
-    productos = await ProductoService.listar();
+    // ✅ AQUÍ ESTÁ LA MAGIA: Le pasamos el token al servicio para que lo envíe a Java
+    const data = await ProductoService.listar(token);
+    // Nos aseguramos de que data sea un arreglo para que el .map no explote
+    productos = Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error("Error cargando productos:", error);
+    console.error("Error al cargar la lista de productos:", error);
+    productos = [];
   }
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      
       {/* Navegación */}
       <nav className="px-8 py-6 bg-white border-b border-slate-100 sticky top-0 z-10 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-semibold text-sm transition group">
@@ -59,7 +75,6 @@ export default async function ListaDonacionesPage() {
 
               <tbody className="divide-y divide-slate-50 text-slate-700">
 
-                {/* 🔥 DATA */}
                 {productos.length > 0 ? (
                   productos.map((item, index) => (
                     <tr key={item?.id ?? index} className="hover:bg-blue-50/30 transition-colors">

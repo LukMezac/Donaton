@@ -3,41 +3,17 @@ import Link from "next/link";
 import { Heart, Truck, MapPin, ArrowRight, ShieldCheck } from "lucide-react";
 import { ProductoService } from '@/modelo/productos';
 import AlertaDocker from '@/componentes/AlertaDocker';
+import NavbarGlobal from '@/componentes/NavbarGlobal'; // ✅ Ya lo tienes importado
 
 export default async function Home() {
   try {
-    // ✅ Solo verificamos conexión SIN timeout artificial
     await ProductoService.listar();
 
     return (
       <div className="min-h-screen bg-white text-slate-900 font-sans">
-        {/* Navegación */}
-        <nav className="flex items-center justify-between px-10 py-6 border-b border-slate-50">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-600 p-1.5 rounded-lg">
-              <Heart className="text-white" size={20} fill="currentColor" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-blue-700">Donaton</span>
-          </div>
-          
-          <div className="hidden md:flex gap-10 text-sm font-semibold text-slate-500 items-center">
-            <Link href="/lista-donaciones" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
-              Donaciones
-            </Link>
-            <Link href="/logistica" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
-              Logística
-            </Link>
-            <Link href="/necesidades" className="hover:text-blue-600 transition cursor-pointer text-slate-800 font-bold">
-              Necesidades
-            </Link>
-          </div>
-          
-          <Link href="/login">
-            <button className="bg-sky-100 text-sky-700 px-6 py-2 rounded-full text-sm font-bold hover:bg-sky-200 transition cursor-pointer">
-              Portal Admin
-            </button>
-          </Link>
-        </nav>
+        
+        {/* ✅ REEMPLAZO: Quitamos el <nav> manual y ponemos el componente dinámico */}
+        <NavbarGlobal /> 
 
         <main className="max-w-6xl mx-auto px-6">
           {/* Hero */}
@@ -115,7 +91,6 @@ export default async function Home() {
       </div>
     );
   } catch (error: any) {
-    // ❌ Solo se muestra si REALMENTE falla el backend
     return <AlertaDocker />;
   }
 }

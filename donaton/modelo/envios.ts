@@ -1,39 +1,30 @@
-const URL = "http://localhost:8090/envios";
+const URL = "http://127.0.0.1:8090/envios"; 
 
 export const EnvioService = {
-  async listar() {
-    const res = await fetch(URL, { cache: "no-store" });
-    return res.json();
+  // LISTAR: Ahora no falla si no hay token (público)
+  async listar(token?: string) {
+    try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(URL, { cache: "no-store", headers });
+      return res.ok ? await res.json() : [];
+    } catch (error) {
+      return [];
+    }
   },
 
-  async crear(data: any) {
-    await fetch(URL, {
+  // CREAR: Requiere token obligatoriamente
+  async crear(data: any, token: string) {
+    const res = await fetch(URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify(data),
     });
-  },
-
-  async actualizar(id: number, data: any) {
-    await fetch(`${URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  },
-
-  // 🔥 ESTA ES LA QUE TE FALTA
-  async actualizarEstado(id: number, estado: string) {
-    await fetch(`${URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado }),
-    });
-  },
-
-  async eliminar(id: number) {
-    await fetch(`${URL}/${id}`, {
-      method: "DELETE",
-    });
-  },
+    if (!res.ok) throw new Error(`Error ${res.status}: No autorizado`);
+    return await res.json();
+  }
 };

@@ -1,30 +1,89 @@
+const URL = "http://127.0.0.1:8090/necesidades";
+
 export const NecesidadService = {
 
-  async listar() {
-    const res = await fetch('http://localhost:8090/necesidades');
-    return res.json();
+  // ✅ LISTAR (PÚBLICO)
+  async listar(token?: string) {
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+
+      // 👇 token opcional
+      if (token && token !== "undefined") {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(URL, {
+        cache: "no-store",
+        headers
+      });
+
+      if (!res.ok) {
+        console.error("❌ ERROR BACKEND:", res.status);
+        return [];
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("🔥 FALLO FETCH NECESIDADES:", error);
+      return [];
+    }
   },
 
-  async crear(data: any) {
-    await fetch('http://localhost:8090/necesidades', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+  // ✅ CREAR (USER o ADMIN)
+  async crear(data: any, token?: string) {
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token && token !== "undefined") {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("🔥 ERROR CREAR NECESIDAD:", error);
+      throw error;
+    }
+  },
+
+  // 🔒 SOLO ADMIN
+  async actualizar(id: number, data: any, token: string) {
+    const res = await fetch(`${URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(data)
     });
+
+    if (!res.ok) throw new Error("Error al actualizar");
+    return true;
   },
 
-  async eliminar(id: number) {
-    await fetch(`http://localhost:8090/necesidades/${id}`, {
-      method: 'DELETE'
+  // 🔒 SOLO ADMIN
+  async eliminar(id: number, token: string) {
+    const res = await fetch(`${URL}/${id}`, {
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
-  },
 
-  async actualizar(id: number, data: any) {
-    await fetch(`http://localhost:8090/necesidades/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    if (!res.ok) throw new Error("Error al eliminar");
+    return true;
   }
-
 };
