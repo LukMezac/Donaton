@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Package, Truck, ClipboardList,
   RefreshCcw, Trash2, CheckCircle2, Search,
-  Activity, ChevronRight, Edit3, Check
+  Activity, ChevronRight, Edit3, Check, LogOut, Heart
 } from 'lucide-react';
 
 // --- COMPONENTES DE APOYO ---
@@ -67,6 +67,15 @@ export default function AdminPage() {
 
   useEffect(() => { fetchData(); }, [vistaActiva]);
 
+  // 🚪 CERRAR SESIÓN
+  const handleLogout = () => {
+    const cookiesParaLimpiar = ['token_acceso', 'user_role', 'user_name'];
+    cookiesParaLimpiar.forEach(cookie => {
+      document.cookie = `${cookie}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
+    });
+    window.location.replace("/login");
+  };
+
   // 🗑️ ELIMINAR
   const handleEliminar = async (id: number) => {
     if (!confirm("¿Eliminar este registro?")) return;
@@ -85,7 +94,6 @@ export default function AdminPage() {
   const handleGuardarEdicion = async (item: any) => {
     try {
       const body = { ...item, stock: nuevoValor, cantidad: nuevoValor };
-
       const res = await fetch(`${URLS.INVENTARIO}/${item.id}`, {
         method: 'PUT',
         headers: {
@@ -94,7 +102,6 @@ export default function AdminPage() {
         },
         body: JSON.stringify(body)
       });
-
       if (res.ok) {
         setEditandoId(null);
         await fetchData(); 
@@ -104,14 +111,11 @@ export default function AdminPage() {
     }
   };
 
-  // ✅ NECESIDADES (¡CORREGIDO!)
+  // ✅ RESOLVER NECESIDAD
   const handleResolverNecesidad = async (item: any) => {
     try {
-      // 🔥 AQUÍ ESTÁ LA CLAVE: Solo enviamos estado, mantenemos la prioridad intacta
       const body = { ...item, estado: 'Resuelto' };
-      
       setData(prev => prev.map(p => p.id === item.id ? body : p));
-
       const res = await fetch(`${URLS.NECESIDADES}/${item.id}`, {
         method: 'PUT',
         headers: {
@@ -120,14 +124,13 @@ export default function AdminPage() {
         },
         body: JSON.stringify(body)
       });
-
       if (!res.ok) await fetchData(); 
     } catch (e) {
       console.error(e);
     }
   };
 
-  // 🔄 LOGÍSTICA
+  // 🔄 CICLO LOGÍSTICA
   const handleCicloLogistica = async (item: any) => {
     const estadoActual = (item.estado || item.prioridad || 'pendiente').toLowerCase();
     const ESTADOS_MIN = ['pendiente', 'en tránsito', 'entregado'];
@@ -147,13 +150,9 @@ export default function AdminPage() {
         },
         body: JSON.stringify(body)
       });
-
-      if (!res.ok) {
-        console.error("El backend rechazó el cambio");
-        await fetchData(); 
-      }
+      if (!res.ok) await fetchData(); 
     } catch (e) {
-      console.error("Error de conexión", e);
+      console.error(e);
       await fetchData(); 
     }
   };
@@ -171,11 +170,11 @@ export default function AdminPage() {
       <aside className="w-80 bg-white border-r border-slate-100 flex flex-col hidden lg:flex relative z-20">
         <div className="p-10 flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <LayoutDashboard className="text-white" size={24} />
+            <Heart className="text-white" size={24} fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight">Donaton</h1>
-            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Admin Central</p>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-800">Donaton</h1>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest text-left">Admin Central</p>
           </div>
         </div>
 
@@ -184,12 +183,21 @@ export default function AdminPage() {
           <NavItem icon={<ClipboardList size={22} />} label="Necesidades" active={vistaActiva === 'NECESIDADES'} onClick={() => setVistaActiva('NECESIDADES')} color="rose" />
           <NavItem icon={<Truck size={22} />} label="Logística" active={vistaActiva === 'LOGISTICA'} onClick={() => setVistaActiva('LOGISTICA')} color="indigo" />
         </nav>
+
+        <div className="p-6 border-t border-slate-50">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl font-extrabold text-sm text-rose-500 hover:bg-rose-50 transition-all group"
+          >
+            <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
+            Cerrar Sesión
+          </button>
+        </div>
       </aside>
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
         
-        {/* TOPBAR */}
         <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between px-12 sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -232,15 +240,16 @@ export default function AdminPage() {
                         <div className="flex items-center gap-5">
                           <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-400 text-xs">{item.id}</div>
                           <div>
-                            <div className="font-extrabold text-slate-800 text-lg">
+                            <div className="font-extrabold text-slate-800 text-lg capitalize">
                               {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : (item.nombre || item.descripcion || "Recurso")}
                             </div>
+                            {/* CATEGORÍA DINÁMICA */}
                             <div className="text-[11px] font-bold text-slate-400 uppercase">
-                                      {vistaActiva === 'LOGISTICA' 
-                                        ? `Chofer: ${item.transportista || 'N/A'}` 
-                                        : vistaActiva === 'INVENTARIO' 
-                                          ? `Categoría: ${item.categoria || 'Sin categoría'}`
-                                          : 'Alerta del sistema'}
+                              {vistaActiva === 'LOGISTICA' 
+                                ? `Chofer: ${item.transportista || 'N/A'}` 
+                                : vistaActiva === 'INVENTARIO' 
+                                  ? `Categoría: ${item.categoria || 'General'}`
+                                  : 'Alerta del sistema'}
                             </div>
                           </div>
                         </div>
