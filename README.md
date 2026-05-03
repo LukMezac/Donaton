@@ -1,4 +1,4 @@
-# 💻 Frontend Donaton - Plataforma de Ayuda Humanitaria
+# Frontend Donaton - Plataforma de Ayuda Humanitaria
 
 Este repositorio contiene la interfaz de usuario de la plataforma **Donaton**, desarrollada con **Next.js** y estructurada bajo estándares de componentes modulares y reutilizables para garantizar una solución técnica alineada con las necesidades del cliente.
 
