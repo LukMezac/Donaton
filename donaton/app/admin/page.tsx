@@ -2,309 +2,289 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Package, Trash2, Edit, RefreshCcw, Check,
-  AlertCircle, Box, LayoutDashboard,
-  ShoppingCart, HeartHandshake, ArrowRightLeft, ClipboardList, Truck
+  LayoutDashboard, Package, Truck, ClipboardList,
+  RefreshCcw, Trash2, CheckCircle2, Search,
+  Activity, ChevronRight, Edit3, Check
 } from 'lucide-react';
-import { eliminarRecursoAction, editarRecursoAction } from '@/lib/recurso-actions';
 
-const URL_PRODUCTOS = 'http://127.0.0.1:8090/productos';
+// --- COMPONENTES DE APOYO ---
+function NavItem({ icon, label, active, onClick, color }: any) {
+    const colors: any = { 
+      blue: 'text-blue-600 bg-blue-50', 
+      rose: 'text-rose-600 bg-rose-50', 
+      indigo: 'text-indigo-600 bg-indigo-50' 
+    };
+    return (
+      <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl font-extrabold text-sm transition-all group ${active ? colors[color] : 'text-slate-400 hover:bg-slate-50'}`}>
+        <div className="flex items-center gap-4">{icon}{label}</div>
+        <ChevronRight size={16} className={`transition-all ${active ? 'opacity-100' : 'opacity-0 -translate-x-2'}`} />
+      </button>
+    );
+}
+
+function getBadgeStyle(vista: string, valor?: string) {
+    const v = (valor || '').toLowerCase();
+    if (v === 'entregado' || v === 'resuelto') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (v === 'en tránsito' || v === 'en transito') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (v === 'pendiente' || v === 'alta') return 'bg-rose-100 text-rose-700 border-rose-200';
+    return 'bg-slate-100 text-slate-500 border-slate-200';
+}
+
+const URLS = {
+  INVENTARIO: 'http://127.0.0.1:8090/productos',
+  NECESIDADES: 'http://127.0.0.1:8090/necesidades',
+  LOGISTICA: 'http://127.0.0.1:8090/envios',
+};
+
+const ESTADOS_LOGISTICA = ['Pendiente', 'En Tránsito', 'Entregado'];
 
 export default function AdminPage() {
   const [data, setData] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<'INVENTARIO' | 'NECESIDADES' | 'Logística'>('INVENTARIO');
+  const [vistaActiva, setVistaActiva] = useState<'INVENTARIO' | 'NECESIDADES' | 'LOGISTICA'>('INVENTARIO');
+  const [cargando, setCargando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
   const [editandoId, setEditandoId] = useState<number | null>(null);
-  const [nuevoStock, setNuevoStock] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
+  const [nuevoValor, setNuevoValor] = useState<number>(0);
+
+  const getToken = () =>
+    document.cookie.split('; ').find(r => r.startsWith('token_acceso='))?.split('=')[1];
 
   const fetchData = async () => {
     setCargando(true);
-    setError(null);
     try {
-      const cookiesArr = document.cookie.split('; ');
-      const token = cookiesArr.find(row => row.startsWith('token_acceso='))?.split('=')[1];
-
-      if (!token) {
-        setError('No hay token de acceso');
-        setCargando(false);
-        return;
-      }
-
-      // Fetch solo productos
-      const res = await fetch(URL_PRODUCTOS, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch(URLS[vistaActiva], {
+        headers: { Authorization: `Bearer ${getToken()}` },
+        cache: "no-store" 
       });
-
-      if (!res.ok) {
-        setError(`Error al traer productos: ${res.status}`);
-        setData([]);
-      } else {
-        const productos = await res.json();
-        setData(Array.isArray(productos) ? productos : []);
-        console.log('✅ Productos cargados:', productos);
-      }
-    } catch (error) {
-      console.error('❌ Error general:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      const json = await res.json();
+      setData(Array.isArray(json) ? json : []);
+    } catch (e) {
+      console.error(e);
       setData([]);
-    } finally {
-      setCargando(false);
+    }
+    setCargando(false);
+  };
+
+  useEffect(() => { fetchData(); }, [vistaActiva]);
+
+  // 🗑️ ELIMINAR
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿Eliminar este registro?")) return;
+    try {
+      const res = await fetch(`${URLS[vistaActiva]}/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (res.ok) await fetchData(); 
+    } catch (e) {
+      console.error("Error eliminar", e);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // ✏️ EDITAR INVENTARIO
+  const handleGuardarEdicion = async (item: any) => {
+    try {
+      const body = { ...item, stock: nuevoValor, cantidad: nuevoValor };
 
-  // Filtrado según vista activa
-  const itemsFiltrados = data;
+      const res = await fetch(`${URLS.INVENTARIO}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
 
-  const stats = {
-    donaciones: data.length,
-    necesidades: 0,
-    bajoStock: data.filter(i => Number(i.stock ?? 0) < 5).length,
+      if (res.ok) {
+        setEditandoId(null);
+        await fetchData(); 
+      }
+    } catch (e) {
+      console.error("Error editar", e);
+    }
   };
 
+  // ✅ NECESIDADES (¡CORREGIDO!)
+  const handleResolverNecesidad = async (item: any) => {
+    try {
+      // 🔥 AQUÍ ESTÁ LA CLAVE: Solo enviamos estado, mantenemos la prioridad intacta
+      const body = { ...item, estado: 'Resuelto' };
+      
+      setData(prev => prev.map(p => p.id === item.id ? body : p));
+
+      const res = await fetch(`${URLS.NECESIDADES}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) await fetchData(); 
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 🔄 LOGÍSTICA
+  const handleCicloLogistica = async (item: any) => {
+    const estadoActual = (item.estado || item.prioridad || 'pendiente').toLowerCase();
+    const ESTADOS_MIN = ['pendiente', 'en tránsito', 'entregado'];
+    const indexActual = ESTADOS_MIN.indexOf(estadoActual);
+    const nextIndex = indexActual === -1 ? 1 : (indexActual + 1) % ESTADOS_LOGISTICA.length;
+    const nuevoEstado = ESTADOS_LOGISTICA[nextIndex]; 
+
+    const body = { ...item, estado: nuevoEstado, prioridad: nuevoEstado };
+    setData(prev => prev.map(p => p.id === item.id ? body : p));
+
+    try {
+      const res = await fetch(`${URLS.LOGISTICA}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        console.error("El backend rechazó el cambio");
+        await fetchData(); 
+      }
+    } catch (e) {
+      console.error("Error de conexión", e);
+      await fetchData(); 
+    }
+  };
+
+  const filteredData = data.filter(item =>
+    (item.nombre || item.descripcion || item.destino || '')
+      .toLowerCase()
+      .includes(busqueda.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-slate-900 pb-20">
-      {/* HEADER */}
-      <header className="bg-white border-b border-slate-200 px-10 py-6 flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <div className="bg-slate-900 p-3 rounded-2xl text-white">
-            <LayoutDashboard size={24} />
+    <div className="min-h-screen bg-[#fcfdfe] flex text-slate-900 font-sans">
+      
+      {/* SIDEBAR */}
+      <aside className="w-80 bg-white border-r border-slate-100 flex flex-col hidden lg:flex relative z-20">
+        <div className="p-10 flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <LayoutDashboard className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="font-black text-2xl tracking-tighter uppercase italic text-slate-900">
-              Donaton<span className="text-blue-600 font-black">HQ</span>
-            </h1>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mt-1">
-              Gestión Humanitaria
-            </p>
+            <h1 className="text-xl font-extrabold tracking-tight">Donaton</h1>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Admin Central</p>
           </div>
         </div>
 
-        <button
-          onClick={fetchData}
-          className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all"
-          title="Actualizar datos"
-        >
-          <RefreshCcw size={20} className={cargando ? 'animate-spin' : ''} />
-        </button>
-      </header>
+        <nav className="flex-1 px-6 space-y-3">
+          <NavItem icon={<Package size={22} />} label="Inventario" active={vistaActiva === 'INVENTARIO'} onClick={() => setVistaActiva('INVENTARIO')} color="blue" />
+          <NavItem icon={<ClipboardList size={22} />} label="Necesidades" active={vistaActiva === 'NECESIDADES'} onClick={() => setVistaActiva('NECESIDADES')} color="rose" />
+          <NavItem icon={<Truck size={22} />} label="Logística" active={vistaActiva === 'LOGISTICA'} onClick={() => setVistaActiva('LOGISTICA')} color="indigo" />
+        </nav>
+      </aside>
 
       {/* MAIN CONTENT */}
-      <main className="max-w-7xl mx-auto p-10 space-y-12">
-        {/* ERROR MESSAGE */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center gap-3">
-            <AlertCircle size={20} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* STATS CARDS */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <StatCard icon={<Box />} label="INVENTARIO" value={stats.donaciones} color="blue" />
-          <StatCard icon={<ClipboardList />} label="NECESIDADES" value={stats.necesidades} color="orange" />
-          <StatCard icon={<AlertCircle />} label="BAJO STOCK" value={stats.bajoStock} color="red" />
-        </section>
-
-        {/* TABS */}
-        <div className="flex justify-start">
-          <div className="flex bg-slate-200/50 p-1.5 rounded-[2rem] backdrop-blur-md">
-            <TabControl
-              active={vistaActiva === 'INVENTARIO'}
-              onClick={() => setVistaActiva('INVENTARIO')}
-              icon={<HeartHandshake size={18} />}
-              title="Gestión de Donaciones"
-            />
-            <TabControl
-              active={vistaActiva === 'NECESIDADES'}
-              onClick={() => setVistaActiva('NECESIDADES')}
-              icon={<ArrowRightLeft size={18} />}
-              title="Panel de Necesidades"
-            />
-            <TabControl
-              active={vistaActiva === 'Logística'}
-              onClick={() => setVistaActiva('Logística')}
-              icon={<Truck size={18} />}
-              title="Panel de Logística"
+      <main className="flex-1 flex flex-col">
+        
+        {/* TOPBAR */}
+        <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between px-12 sticky top-0 z-10">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              type="text" 
+              placeholder={`Filtrar ${vistaActiva.toLowerCase()}...`}
+              className="w-[400px] pl-12 pr-6 py-3.5 bg-slate-100/50 border-none rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
-        </div>
+          <button onClick={fetchData} className="flex items-center gap-3 bg-white border border-slate-200 px-6 py-3 rounded-2xl text-sm font-extrabold hover:bg-slate-50 transition-all shadow-sm">
+            <RefreshCcw size={18} className={cargando ? 'animate-spin' : ''} />
+            Sincronizar Datos
+          </button>
+        </header>
 
-        {/* TABLE */}
-        <section className="bg-white rounded-[3.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-12 py-8 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                  RECURSO
-                </th>
-                <th className="px-12 py-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">
-                  CANTIDAD
-                </th>
-                <th className="px-12 py-8 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">
-                  ACCIONES
-                </th>
-              </tr>
-            </thead>
+        <div className="p-12">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <div className="flex items-center gap-3 mb-2 text-blue-600 font-black uppercase text-[10px] tracking-[0.2em]"><Activity size={16} /> Monitoreo en tiempo real</div>
+              <h2 className="text-4xl font-black tracking-tight capitalize">{vistaActiva.toLowerCase()}</h2>
+            </div>
+            <div className="bg-white border border-slate-100 px-5 py-2.5 rounded-2xl text-xs font-black text-slate-400">{filteredData.length} REGISTROS</div>
+          </div>
 
-            <tbody className="divide-y divide-slate-50">
-              {cargando ? (
-                <tr>
-                  <td colSpan={3} className="px-12 py-14 text-center text-slate-400">
-                    <div className="flex justify-center items-center gap-2">
-                      <RefreshCcw size={20} className="animate-spin" />
-                      Cargando...
-                    </div>
-                  </td>
+          <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/40 border border-slate-50 overflow-hidden">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-10 py-7 text-[11px] font-black text-slate-400 uppercase tracking-widest">Información General</th>
+                  <th className="px-10 py-7 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Métrica / Estado</th>
+                  <th className="px-10 py-7 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
                 </tr>
-              ) : itemsFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-12 py-14 text-center text-slate-400">
-                    No hay elementos para mostrar.
-                  </td>
-                </tr>
-              ) : (
-                itemsFiltrados.map((item: any) => {
-                  const cantidad = item.stock ?? item.cantidad ?? 0;
-
-                  return (
-                    <tr key={item.id} className="hover:bg-blue-50/10 transition-all">
-                      {/* RECURSO */}
-                      <td className="px-12 py-8">
-                        <div className="flex items-center gap-6">
-                          <div className="p-4 rounded-2xl bg-blue-50 text-blue-600">
-                            <Package size={22} />
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {!cargando && filteredData.map((item) => (
+                    <tr key={item.id} className="group hover:bg-slate-50/40 transition-all">
+                      <td className="px-10 py-8">
+                        <div className="flex items-center gap-5">
+                          <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-400 text-xs">{item.id}</div>
+                          <div>
+                            <div className="font-extrabold text-slate-800 text-lg">
+                              {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : (item.nombre || item.descripcion || "Recurso")}
+                            </div>
+                            <div className="text-[11px] font-bold text-slate-400 uppercase">
+                                      {vistaActiva === 'LOGISTICA' 
+                                        ? `Chofer: ${item.transportista || 'N/A'}` 
+                                        : vistaActiva === 'INVENTARIO' 
+                                          ? `Categoría: ${item.categoria || 'Sin categoría'}`
+                                          : 'Alerta del sistema'}
+                            </div>
                           </div>
-                          <span className="font-black text-slate-800 text-xl tracking-tighter capitalize">
-                            {item.nombre}
-                          </span>
                         </div>
                       </td>
-
-                      {/* CANTIDAD */}
-                      <td className="px-12 py-8 text-center">
+                      
+                      <td className="px-10 py-8 text-center">
                         {editandoId === item.id ? (
-                          <input
-                            type="number"
-                            value={nuevoStock}
-                            onChange={(e) => setNuevoStock(Number(e.target.value))}
-                            className="w-20 bg-blue-50 border-2 border-blue-600 rounded-2xl px-2 py-2 text-center font-black text-blue-600"
-                            autoFocus
-                          />
+                           <input type="number" value={nuevoValor} onChange={(e) => setNuevoValor(Number(e.target.value))} className="w-24 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl outline-none text-center font-black text-blue-700" autoFocus />
                         ) : (
-                          <div
-                            className={`inline-flex flex-col items-center justify-center w-24 h-12 rounded-2xl font-black ${
-                              Number(cantidad) < 5
-                                ? 'bg-red-50 text-red-500 animate-pulse'
-                                : 'bg-emerald-50 text-emerald-600'
-                            }`}
+                          <button
+                            onClick={() => vistaActiva === 'LOGISTICA' && handleCicloLogistica(item)}
+                            disabled={vistaActiva !== 'LOGISTICA'}
+                            className={`px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border ${vistaActiva === 'LOGISTICA' ? 'hover:scale-105 active:scale-95 cursor-pointer shadow-sm' : ''} ${getBadgeStyle(vistaActiva, item.prioridad || item.estado)}`}
                           >
-                            <span className="text-lg leading-none">{cantidad}</span>
-                            <span className="text-[8px] uppercase opacity-60 font-bold">Unid.</span>
-                          </div>
+                            {(item.estado || '').toLowerCase() === 'resuelto' 
+                                ? '✅ Resuelto' 
+                                : (item.stock ?? item.cantidad ?? item.prioridad ?? item.estado ?? '-')}
+                            {vistaActiva === 'INVENTARIO' && (item.estado || '').toLowerCase() !== 'resuelto' ? ' UNID.' : ''}
+                          </button>
                         )}
                       </td>
 
-                      {/* ACCIONES */}
-                      <td className="px-12 py-8 text-right">
-                        <div className="flex justify-end gap-3">
-                          {editandoId === item.id ? (
-                            <button
-                              onClick={() =>
-                                editarRecursoAction(item.id, { ...item, stock: nuevoStock }).then(() => {
-                                  setEditandoId(null);
-                                  fetchData();
-                                })
-                              }
-                              className="p-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 transition-all"
-                              title="Guardar cambios"
-                            >
-                              <Check size={20} />
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setEditandoId(item.id);
-                                  setNuevoStock(Number(cantidad) || 0);
-                                }}
-                                className="p-4 bg-white text-slate-300 hover:text-blue-600 border border-slate-100 rounded-3xl transition-all"
-                                title="Editar cantidad"
-                              >
-                                <Edit size={20} />
-                              </button>
-
-                              <button
-                                onClick={() => {
-                                  if (confirm(`¿Eliminar "${item.nombre}"?`)) {
-                                    eliminarRecursoAction(item.id).then(() => fetchData());
-                                  }
-                                }}
-                                className="p-4 bg-white text-slate-300 hover:text-red-600 border border-slate-100 rounded-3xl transition-all"
-                                title="Eliminar recurso"
-                              >
-                                <Trash2 size={20} />
-                              </button>
-                            </>
+                      <td className="px-10 py-8 text-right">
+                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                          {vistaActiva === 'INVENTARIO' && (
+                             editandoId === item.id ? (
+                                <button onClick={() => handleGuardarEdicion(item)} className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><Check size={20} /></button>
+                             ) : (
+                                <button onClick={() => { setEditandoId(item.id); setNuevoValor(item.stock || item.cantidad || 0); }} className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Edit3 size={20} /></button>
+                             )
                           )}
+                          {vistaActiva === 'NECESIDADES' && (item.estado || '').toLowerCase() !== 'resuelto' && (
+                            <button onClick={() => handleResolverNecesidad(item)} className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 size={20} /></button>
+                          )}
+                          <button onClick={() => handleEliminar(item.id)} className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={20} /></button>
                         </div>
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </section>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
-  );
-}
-
-// STAT CARD COMPONENT
-function StatCard({ icon, label, value, color }: any) {
-  const colors: any = {
-    blue: 'bg-blue-600',
-    orange: 'bg-orange-500',
-    red: 'bg-red-600',
-  };
-
-  return (
-    <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100 flex items-center gap-7">
-      <div className={`p-6 rounded-[2rem] text-white ${colors[color]} shadow-2xl`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
-          {label}
-        </p>
-        <h3 className="text-5xl font-black text-slate-800 tracking-tighter leading-none">
-          {value}
-        </h3>
-      </div>
-    </div>
-  );
-}
-
-// TAB CONTROL COMPONENT
-function TabControl({ active, onClick, icon, title }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 px-10 py-4 rounded-[1.8rem] text-[11px] font-black transition-all ${
-        active
-          ? 'bg-white text-slate-900 shadow-xl scale-105'
-          : 'text-slate-400 hover:text-slate-600'
-      }`}
-    >
-      {icon} {title}
-    </button>
   );
 }
