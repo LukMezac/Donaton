@@ -1,39 +1,31 @@
 {
-  "name": "donaton-ui-components",
-  "version": "1.0.0",
-  "private": false,
-  "description": "Componentes de UI reutilizables para la plataforma Donaton",
-  "main": "./componentes/index.ts",
-  "files": [
-    "componentes",
-    "lib",
-    "modelo"
-  ],
+  "name": "donaton-app",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "package": "npm pack"
+    "lint": "next lint"
   },
   "dependencies": {
+    "donaton-ui-components": "file:./donaton-ui-components-1.0.0.tgz",
+    "geist": "^1.7.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.11.0",
-    "next": "16.2.4",
+    "next": "15.0.0",
     "pg": "^8.20.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/leaflet": "^1.9.21",
-    "@types/node": "^20",
-    "@types/pg": "^8.20.0",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/node": "^20.19.39",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "install": "^0.13.0",
+    "postcss": "^8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
