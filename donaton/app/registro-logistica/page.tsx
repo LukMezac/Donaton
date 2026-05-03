@@ -10,10 +10,10 @@ export default async function RegistroLogisticaPage() {
   async function registrarDespacho(formData: FormData) {
     'use server';
 
-    // 🔥 1. OBTENER TOKEN JWT
+    //1. OBTENER TOKEN JWT
     const token = (await cookies()).get('token_acceso')?.value;
 
-    // 🔒 2. PROTECCIÓN: si no hay token → login
+    // 2. PROTECCIÓN: si no hay token → login
     if (!token) {
       redirect('/login');
     }
@@ -30,7 +30,7 @@ export default async function RegistroLogisticaPage() {
     };
 
     try {
-      // ✅ ¡CORREGIDO!: Ahora pasamos el objeto Y EL TOKEN
+      // Ahora pasamos el objeto Y EL TOKEN
       await EnvioService.crear(nuevoEnvio, token);
     } catch (error) {
       console.error("No se pudo registrar la salida:", error);

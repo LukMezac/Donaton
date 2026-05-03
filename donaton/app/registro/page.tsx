@@ -7,13 +7,19 @@ export default function RegistroPage() {
   async function handleRegistro(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const datos = Object.fromEntries(formData);
+    
+  
+    const datos = {
+      usuario: formData.get('usuario') as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+    };
 
     const ok = await UsuarioModelo.registrar(datos);
     
     if (ok) {
-      // ✅ Guardamos el nombre para que el Navbar lo reconozca al volver
-      document.cookie = `user_name=${encodeURIComponent(datos.username as string)}; path=/; max-age=7200; SameSite=Lax`;
+      // usamos datos.usuario, que es seguro
+      document.cookie = `user_name=${encodeURIComponent(datos.usuario)}; path=/; max-age=7200; SameSite=Lax`;
       
       alert("¡Cuenta creada con éxito! Ahora inicia sesión para obtener tu token.");
       window.location.href = "/login";
@@ -46,7 +52,8 @@ export default function RegistroPage() {
           <div className="space-y-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Usuario</label>
-              <input name="username" placeholder="Ej: nombre_apellido" required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition font-medium" />
+              {/* 🔥 Cambio clave: name="usuario" en vez de username para que coincida con el backend */}
+              <input name="usuario" placeholder="Ej: nombre_apellido" required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition font-medium" />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email</label>

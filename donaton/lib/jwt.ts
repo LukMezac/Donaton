@@ -4,7 +4,7 @@ export function decodificarToken(token: string): any {
     const partes = token.split('.');
     if (partes.length !== 3) throw new Error('Token inválido');
 
-    // Decodificar la segunda parte (payload)
+  
     const payload = partes[1];
     const decodificado = JSON.parse(Buffer.from(payload, 'base64').toString());
     

@@ -2,14 +2,14 @@ const URL = "http://127.0.0.1:8090/necesidades";
 
 export const NecesidadService = {
 
-  // ✅ LISTAR (PÚBLICO)
+  // LISTAR (PÚBLICO)
   async listar(token?: string) {
     try {
       const headers: any = {
         'Content-Type': 'application/json'
       };
 
-      // 👇 token opcional
+      //  token opcional
       if (token && token !== "undefined") {
         headers['Authorization'] = `Bearer ${token}`;
       }
@@ -31,7 +31,7 @@ export const NecesidadService = {
     }
   },
 
-  // ✅ CREAR (USER o ADMIN)
+  // CREAR (USER o ADMIN)
   async crear(data: any, token?: string) {
     try {
       const headers: any = {
@@ -59,7 +59,7 @@ export const NecesidadService = {
     }
   },
 
-  // 🔒 SOLO ADMIN
+  // SOLO ADMIN
   async actualizar(id: number, data: any, token: string) {
     const res = await fetch(`${URL}/${id}`, {
       method: "PUT",
@@ -74,7 +74,7 @@ export const NecesidadService = {
     return true;
   },
 
-  // 🔒 SOLO ADMIN
+  //  SOLO ADMIN
   async eliminar(id: number, token: string) {
     const res = await fetch(`${URL}/${id}`, {
       method: "DELETE",

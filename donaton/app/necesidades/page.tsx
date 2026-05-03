@@ -7,13 +7,13 @@ import AlertaDocker from '@/componentes/AlertaDocker';
 
 export default async function NecesidadesPage() {
   
-  // 🔥 2. OBTENER EL TOKEN REAL
+  // 2. OBTENER EL TOKEN REAL
   const token = (await cookies()).get('token_acceso')?.value;
 
-  // 3. BLINDAJE: Consulta a la base de datos PASANDO EL TOKEN
+  // 3.Consulta a la base de datos PASANDO EL TOKEN
   let necesidades: any[] = [];
   try {
-    // ✅ ¡CORREGIDO!: Le pasamos el token al listar
+    //Le pasamos el token al listar
     const data = await NecesidadService.listar(token); 
     necesidades = Array.isArray(data) ? data : [];
   } catch (error) {
@@ -24,14 +24,14 @@ export default async function NecesidadesPage() {
   async function reportarNecesidad(formData: FormData) {
     'use server';
     
-    // 🔥 4. También necesitamos el token aquí para el POST
+    // 4. También necesitamos el token aquí para el POST
     const tokenAction = (await cookies()).get('token_acceso')?.value;
 
     const ubicacion = formData.get('ubicacion') as string;
     const descripcion = formData.get('descripcion') as string;
     const prioridad = formData.get('prioridad') as string;
     
-    // ✅ ¡CORREGIDO!: Pasamos el objeto Y el token al crear
+    // Pasamos el objeto Y el token al crear
     await NecesidadService.crear({ 
       ubicacion, 
       descripcion, 

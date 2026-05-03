@@ -8,7 +8,7 @@ export default async function NavbarGlobal() {
   const token = cookieStore.get('token_acceso')?.value;
   const nombreUsuario = cookieStore.get('user_name')?.value || 'Usuario';
   
-  // 🛡️ 2. Leemos el rol (asegúrate de guardarlo como 'user_role' al hacer login)
+  // 2. Leemos el rol (asegúrate de guardarlo como 'user_role' al hacer login)
   const rol = cookieStore.get('user_role')?.value;
 
   return (

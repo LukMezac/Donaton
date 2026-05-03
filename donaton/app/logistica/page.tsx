@@ -21,7 +21,7 @@ export default async function LogisticaPage() {
     console.error("Error cargando envíos:", error);
   }
 
-  // 3. MATEMÁTICAS PARA LAS TARJETAS (Counters)
+  // 3. MATEMÁTICAS PARA LAS TARJETAS
   const pendientes = envios.filter(e => e.estado === 'Pendiente').length;
   const enTransito = envios.filter(e => e.estado === 'En Tránsito').length;
   const entregados = envios.filter(e => e.estado === 'Entregado').length;

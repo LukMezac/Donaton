@@ -13,7 +13,7 @@ export async function loginAction(formData: FormData) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        username: email, // Mapeado para tu Java
+        username: email,
         password: password 
       }),
     });
@@ -31,7 +31,7 @@ export async function loginAction(formData: FormData) {
     cookieStore.set('user_name', data.nombre);
     cookieStore.set('user_role', userRole);
 
-    // Esto limpia cualquier rastro de la página anterior en el navegador
+    // limpia cualquier rastro de la página anterior en el navegador
     revalidatePath('/', 'layout');
     revalidatePath('/admin', 'layout');
 
@@ -39,7 +39,7 @@ export async function loginAction(formData: FormData) {
     return { error: "Error de conexión con el servidor" };
   }
 
-  // La redirección DEBE ir fuera del try/catch en algunos casos de Next.js
+
   redirect('/admin'); 
 }
 

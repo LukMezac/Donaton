@@ -1,7 +1,7 @@
 const URL = "http://127.0.0.1:8090/envios"; 
 
 export const EnvioService = {
-  // LISTAR: Ahora no falla si no hay token (público)
+  // LISTAR (público)
   async listar(token?: string) {
     try {
       const headers: any = { "Content-Type": "application/json" };

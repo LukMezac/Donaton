@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { UsuarioModelo } from '@/modelo/usuarios';
 import { Heart, Lock, User } from 'lucide-react';
-import Link from 'next/link'; // 1. IMPORTANTE: Agregamos el componente Link
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [error, setError] = useState(false);
@@ -55,11 +55,13 @@ export default function LoginPage() {
         <div className="space-y-4">
           <div className="relative">
             <User className="absolute left-4 top-4 text-slate-400" size={20} />
-            <input name="user" placeholder="Email o Usuario" required className="w-full pl-12 pr-4 py-4 bg-slate-50 border rounded-2xl outline-none" />
+            {/* 🔥 Aquí añadimos text-slate-900 font-semibold y mantuvimos pl-11 */}
+            <input name="user" placeholder="Email o Usuario" required className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-900 font-semibold placeholder:text-slate-400" />
           </div>
           <div className="relative">
             <Lock className="absolute left-4 top-4 text-slate-400" size={20} />
-            <input name="pass" type="password" placeholder="Contraseña" required className="w-full pl-12 pr-4 py-4 bg-slate-50 border rounded-2xl outline-none" />
+            {/* 🔥 Aquí también */}
+            <input name="pass" type="password" placeholder="Contraseña" required className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-900 font-semibold placeholder:text-slate-400" />
           </div>
         </div>
 
@@ -69,7 +71,6 @@ export default function LoginPage() {
 
         {error && <p className="text-red-500 text-center text-xs font-black uppercase italic animate-bounce">⚠️ Credenciales incorrectas</p>}
 
-        {/* 2. NUEVO: Sección para redirigir al registro */}
         <div className="pt-4 text-center border-t border-slate-100">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
             ¿No tienes una cuenta?{' '}

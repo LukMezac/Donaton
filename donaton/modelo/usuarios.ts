@@ -2,7 +2,7 @@ const BASE_URL = "http://localhost:8090/auth";
 
 export const UsuarioModelo = {
 
-  // 🔐 LOGIN COMPLETO
+  // LOGIN COMPLETO
   async validarLoginCompleto(username: string, password: string) {
     try {
       const res = await fetch(`${BASE_URL}/login`, {
@@ -16,14 +16,14 @@ export const UsuarioModelo = {
         }),
       });
 
-      // ❌ Error HTTP
+      //  Error HTTP
       if (!res.ok) {
         const error = await res.json();
         console.error("Error login:", error);
         return null;
       }
 
-      // ✅ Respuesta correcta
+      //  Respuesta correcta
       const data = await res.json();
 
       /*
@@ -42,7 +42,7 @@ export const UsuarioModelo = {
     }
   },
 
-  // 🧾 REGISTRO
+  // REGISTRO
   async registrar(datos: { usuario: string; email: string; password: string }) {
     try {
       const res = await fetch(`${BASE_URL}/register`, {

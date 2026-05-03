@@ -1,4 +1,4 @@
-'use client'; // DEBE ser un Client Component
+'use client'; 
 
 import AlertaDocker from '@/componentes/AlertaDocker';
 import { useEffect } from 'react';

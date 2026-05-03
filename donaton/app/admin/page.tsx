@@ -7,8 +7,7 @@ import {
   Activity, ChevronRight, Edit3, Check
 } from 'lucide-react';
 
-// --- COMPONENTES Y FUNCIONES DE APOYO (Puestos arriba para evitar errores) ---
-
+// --- COMPONENTES DE APOYO ---
 function NavItem({ icon, label, active, onClick, color }: any) {
     const colors: any = { 
       blue: 'text-blue-600 bg-blue-50', 
@@ -24,13 +23,12 @@ function NavItem({ icon, label, active, onClick, color }: any) {
 }
 
 function getBadgeStyle(vista: string, valor?: string) {
-    if (valor === 'Entregado' || valor === 'Resuelto') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    if (valor === 'En Tránsito') return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (valor === 'Pendiente' || valor === 'Alta') return 'bg-rose-100 text-rose-700 border-rose-200';
+    const v = (valor || '').toLowerCase();
+    if (v === 'entregado' || v === 'resuelto') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (v === 'en tránsito' || v === 'en transito') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (v === 'pendiente' || v === 'alta') return 'bg-rose-100 text-rose-700 border-rose-200';
     return 'bg-slate-100 text-slate-500 border-slate-200';
 }
-
-// --- COMPONENTE PRINCIPAL ---
 
 const URLS = {
   INVENTARIO: 'http://127.0.0.1:8090/productos',
@@ -48,12 +46,15 @@ export default function AdminPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [nuevoValor, setNuevoValor] = useState<number>(0);
 
+  const getToken = () =>
+    document.cookie.split('; ').find(r => r.startsWith('token_acceso='))?.split('=')[1];
+
   const fetchData = async () => {
     setCargando(true);
     try {
-      const token = document.cookie.split('; ').find(r => r.startsWith('token_acceso='))?.split('=')[1];
       const res = await fetch(URLS[vistaActiva], {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        headers: { Authorization: `Bearer ${getToken()}` },
+        cache: "no-store" 
       });
       const json = await res.json();
       setData(Array.isArray(json) ? json : []);
@@ -66,25 +67,102 @@ export default function AdminPage() {
 
   useEffect(() => { fetchData(); }, [vistaActiva]);
 
-  // Ciclo para Logística
-  const handleCicloLogistica = (id: number, estadoActual: string) => {
-    const currentIndex = ESTADOS_LOGISTICA.indexOf(estadoActual || 'Pendiente');
-    const nextIndex = (currentIndex + 1) % ESTADOS_LOGISTICA.length;
-    const nuevoEstado = ESTADOS_LOGISTICA[nextIndex];
-    setData(prev => prev.map(item => item.id === id ? { ...item, prioridad: nuevoEstado } : item));
+  // ELIMINAR
+  const handleEliminar = async (id: number) => {
+    if (!confirm("¿Eliminar este registro?")) return;
+    try {
+      const res = await fetch(`${URLS[vistaActiva]}/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (res.ok) await fetchData(); 
+    } catch (e) {
+      console.error("Error eliminar", e);
+    }
   };
 
-  // Ticket para Necesidades
-  const handleResolverNecesidad = (id: number) => {
-    setData(prev => prev.map(item => 
-      item.id === id ? { ...item, estado: 'Resuelto', prioridad: 'Resuelto' } : item
-    ));
+  // EDITAR INVENTARIO
+  const handleGuardarEdicion = async (item: any) => {
+    try {
+      const body = { ...item, stock: nuevoValor, cantidad: nuevoValor };
+
+      const res = await fetch(`${URLS.INVENTARIO}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        setEditandoId(null);
+        await fetchData(); 
+      }
+    } catch (e) {
+      console.error("Error editar", e);
+    }
   };
 
-  const filteredData = data.filter(item => {
-    const term = (item.nombre || item.descripcion || item.destino || '').toLowerCase();
-    return term.includes(busqueda.toLowerCase());
-  });
+  //NECESIDADES
+  const handleResolverNecesidad = async (item: any) => {
+    try {
+      //Solo enviamos estado, mantenemos la prioridad intacta
+      const body = { ...item, estado: 'Resuelto' };
+      
+      setData(prev => prev.map(p => p.id === item.id ? body : p));
+
+      const res = await fetch(`${URLS.NECESIDADES}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) await fetchData(); 
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 🔄 LOGÍSTICA
+  const handleCicloLogistica = async (item: any) => {
+    const estadoActual = (item.estado || item.prioridad || 'pendiente').toLowerCase();
+    const ESTADOS_MIN = ['pendiente', 'en tránsito', 'entregado'];
+    const indexActual = ESTADOS_MIN.indexOf(estadoActual);
+    const nextIndex = indexActual === -1 ? 1 : (indexActual + 1) % ESTADOS_LOGISTICA.length;
+    const nuevoEstado = ESTADOS_LOGISTICA[nextIndex]; 
+
+    const body = { ...item, estado: nuevoEstado, prioridad: nuevoEstado };
+    setData(prev => prev.map(p => p.id === item.id ? body : p));
+
+    try {
+      const res = await fetch(`${URLS.LOGISTICA}/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        console.error("El backend rechazó el cambio");
+        await fetchData(); 
+      }
+    } catch (e) {
+      console.error("Error de conexión", e);
+      await fetchData(); 
+    }
+  };
+
+  const filteredData = data.filter(item =>
+    (item.nombre || item.descripcion || item.destino || '')
+      .toLowerCase()
+      .includes(busqueda.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-[#fcfdfe] flex text-slate-900 font-sans">
@@ -111,7 +189,7 @@ export default function AdminPage() {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
         
-        {/* TOPBAR - Letra oscura corregida */}
+        {/* TOPBAR */}
         <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between px-12 sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -129,7 +207,7 @@ export default function AdminPage() {
           </button>
         </header>
 
-        <div className="p-12 text-slate-900">
+        <div className="p-12">
           <div className="flex items-end justify-between mb-10">
             <div>
               <div className="flex items-center gap-3 mb-2 text-blue-600 font-black uppercase text-[10px] tracking-[0.2em]"><Activity size={16} /> Monitoreo en tiempo real</div>
@@ -139,10 +217,10 @@ export default function AdminPage() {
           </div>
 
           <div className="bg-white rounded-[40px] shadow-2xl shadow-slate-200/40 border border-slate-50 overflow-hidden">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-10 py-7 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Información General</th>
+                  <th className="px-10 py-7 text-[11px] font-black text-slate-400 uppercase tracking-widest">Información General</th>
                   <th className="px-10 py-7 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Métrica / Estado</th>
                   <th className="px-10 py-7 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
                 </tr>
@@ -158,8 +236,12 @@ export default function AdminPage() {
                               {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : (item.nombre || item.descripcion || "Recurso")}
                             </div>
                             <div className="text-[11px] font-bold text-slate-400 uppercase">
-                              {vistaActiva === 'LOGISTICA' ? `Chofer: ${item.transportista || 'N/A'}` : 'Entidad del sistema'}
-                            </div>
+                                {vistaActiva === 'LOGISTICA' 
+                                  ? `Chofer: ${item.transportista || 'N/A'}` 
+                                  : vistaActiva === 'INVENTARIO' 
+                                    ? `Categoría: ${item.categoria || 'Sin categoría'}`
+                                    : 'Alerta del sistema'}
+                             </div>
                           </div>
                         </div>
                       </td>
@@ -169,34 +251,31 @@ export default function AdminPage() {
                            <input type="number" value={nuevoValor} onChange={(e) => setNuevoValor(Number(e.target.value))} className="w-24 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl outline-none text-center font-black text-blue-700" autoFocus />
                         ) : (
                           <button
-                            onClick={() => vistaActiva === 'LOGISTICA' && handleCicloLogistica(item.id, item.prioridad)}
+                            onClick={() => vistaActiva === 'LOGISTICA' && handleCicloLogistica(item)}
                             disabled={vistaActiva !== 'LOGISTICA'}
                             className={`px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border ${vistaActiva === 'LOGISTICA' ? 'hover:scale-105 active:scale-95 cursor-pointer shadow-sm' : ''} ${getBadgeStyle(vistaActiva, item.prioridad || item.estado)}`}
                           >
-                            {/* Ajuste para que diga Resuelto visualmente */}
-                            {item.estado === 'Resuelto' || item.prioridad === 'Resuelto' 
+                            {(item.estado || '').toLowerCase() === 'resuelto' 
                                 ? '✅ Resuelto' 
                                 : (item.stock ?? item.cantidad ?? item.prioridad ?? item.estado ?? '-')}
-                            {vistaActiva === 'INVENTARIO' && item.estado !== 'Resuelto' ? ' UNID.' : ''}
+                            {vistaActiva === 'INVENTARIO' && (item.estado || '').toLowerCase() !== 'resuelto' ? ' UNID.' : ''}
                           </button>
                         )}
                       </td>
 
                       <td className="px-10 py-8 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                          {/* Lápiz para Inventario */}
                           {vistaActiva === 'INVENTARIO' && (
                              editandoId === item.id ? (
-                                <button className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><Check size={20} /></button>
+                                <button onClick={() => handleGuardarEdicion(item)} className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><Check size={20} /></button>
                              ) : (
                                 <button onClick={() => { setEditandoId(item.id); setNuevoValor(item.stock || item.cantidad || 0); }} className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Edit3 size={20} /></button>
                              )
                           )}
-                          {/* Ticket para Necesidades */}
-                          {vistaActiva === 'NECESIDADES' && item.estado !== 'Resuelto' && (
-                            <button onClick={() => handleResolverNecesidad(item.id)} className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 size={20} /></button>
+                          {vistaActiva === 'NECESIDADES' && (item.estado || '').toLowerCase() !== 'resuelto' && (
+                            <button onClick={() => handleResolverNecesidad(item)} className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 size={20} /></button>
                           )}
-                          <button className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={20} /></button>
+                          <button onClick={() => handleEliminar(item.id)} className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={20} /></button>
                         </div>
                       </td>
                     </tr>

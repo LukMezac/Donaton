@@ -4,7 +4,7 @@ import {
   User, MapPin, CreditCard, Gift, RefreshCcw, 
   Heart, Settings, Smartphone, Landmark, LogOut, ChevronRight 
 } from 'lucide-react';
-import { logoutAction } from '@/lib/auth-actions'; // Importaremos la acción aquí
+import { logoutAction } from '@/lib/auth-actions';
 
 export default function NavbarPerfil() {
   const menuItems = [

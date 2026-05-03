@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Heart, Truck, MapPin, ArrowRight, ShieldCheck } from "lucide-react";
 import { ProductoService } from '@/modelo/productos';
 import AlertaDocker from '@/componentes/AlertaDocker';
-import NavbarGlobal from '@/componentes/NavbarGlobal'; // ✅ Ya lo tienes importado
+import NavbarGlobal from '@/componentes/NavbarGlobal';
 
 export default async function Home() {
   try {
@@ -12,7 +12,7 @@ export default async function Home() {
     return (
       <div className="min-h-screen bg-white text-slate-900 font-sans">
         
-        {/* ✅ REEMPLAZO: Quitamos el <nav> manual y ponemos el componente dinámico */}
+        {/* Quitamos el <nav> manual y ponemos el componente dinámico */}
         <NavbarGlobal /> 
 
         <main className="max-w-6xl mx-auto px-6">

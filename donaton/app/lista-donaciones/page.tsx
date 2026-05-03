@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { ProductoService } from '@/modelo/productos';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -6,20 +7,19 @@ import { ArrowLeft, Package, Plus } from 'lucide-react';
 
 export default async function ListaDonacionesPage() {
 
-  // 🔥 1. OBTENER TOKEN
+  //OBTENER TOKEN
   const token = (await cookies()).get('token_acceso')?.value;
 
-  // 🔥 2. PROTEGER RUTA
+  // PROTEGER RUTA
   if (!token) {
     redirect('/login');
   }
 
-  // 🔥 3. LLAMAR AL BACKEND
+  // LLAMAR AL BACKEND
   let productos: any[] = [];
   try {
-    // ✅ AQUÍ ESTÁ LA MAGIA: Le pasamos el token al servicio para que lo envíe a Java
+    // pasamos el token al servicio para que lo envíe a Java
     const data = await ProductoService.listar(token);
-    // Nos aseguramos de que data sea un arreglo para que el .map no explote
     productos = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error al cargar la lista de productos:", error);

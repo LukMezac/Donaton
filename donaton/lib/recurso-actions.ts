@@ -33,7 +33,6 @@ export async function eliminarRecursoAction(id: number) {
   }
 }
 
-// ✅ ASEGÚRATE DE QUE TENGA 'export' Y EL NOMBRE EXACTO
 export async function editarRecursoAction(id: number, datos: any) {
   try {
     const headers = await getAuthHeaders();
@@ -44,7 +43,7 @@ export async function editarRecursoAction(id: number, datos: any) {
     });
 
     if (res.ok) {
-      revalidatePath('/admin'); // Actualiza la tabla automáticamente
+      revalidatePath('/admin'); 
       return true;
     }
     return false;

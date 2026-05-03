@@ -10,10 +10,10 @@ export default async function RegistroDonacionPage() {
   async function registrarProducto(formData: FormData) {
     'use server';
 
-    // 🔥 OBTENER TOKEN
+    // 1- OBTENER TOKEN
     const token = (await cookies()).get('token_acceso')?.value;
 
-    // 🔒 PROTECCIÓN
+    // 2- PROTECCIÓN
     if (!token) {
       redirect('/login');
     }
@@ -31,11 +31,11 @@ export default async function RegistroDonacionPage() {
     };
 
     try {
-      // 🔥 ¡AQUÍ ESTÁ LA MAGIA ARREGLADA! Pasamos el producto Y EL TOKEN
+      // Pasamos el producto Y EL TOKEN
       await ProductoService.crear(nuevoProducto, token);
     } catch (error) {
       console.error("No se pudo guardar la donación", error);
-      // Aquí podrías manejar el error visualmente si quisieras
+      
     }
 
     // 3. Refrescamos la lista y redirigimos
