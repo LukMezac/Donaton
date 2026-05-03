@@ -1,4 +1,5 @@
 'use client';
+import { NavbarGlobal } from 'donaton-ui-components';
 import { useState } from 'react';
 import { UsuarioModelo } from '@/modelo/usuarios';
 import { Heart, Lock, User } from 'lucide-react';
