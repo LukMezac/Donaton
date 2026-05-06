@@ -33,7 +33,9 @@ Sigue estos pasos para configurar el entorno local:
     ```bash
     npm install
     ```
-
+    ```bash
+    npm install --legacy-peer-deps
+    ```
 2.  **⚙️ Configuración de variables de entorno**:
     Crea un archivo `.env.local` en la raíz del proyecto y apunta a la dirección de tu **BFF (Backend For Frontend)**[cite: 3]:
     ```env
