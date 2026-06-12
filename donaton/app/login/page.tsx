@@ -20,11 +20,15 @@ export default function LoginPage() {
 
     const respuesta = await UsuarioModelo.validarLoginCompleto(user, pass);
 
+    // 🔥 AGREGA ESTO: Veamos qué está devolviendo realmente tu modelo
+    console.log("Respuesta del Modelo:", respuesta);
+
     if (respuesta?.token) {
       // Guardamos cookies con nombres consistentes
       document.cookie = `token_acceso=${respuesta.token}; path=/; max-age=7200; SameSite=Lax`;
       
-      const role = respuesta.rol?.toString().toUpperCase().trim();
+      // 🔥 CAMBIO: Forma más segura de leer el rol por si viene undefined
+      const role = String(respuesta.rol || '').toUpperCase().trim();
       document.cookie = `user_role=${role}; path=/; max-age=7200; SameSite=Lax`;
       
       const nombreUsuario = respuesta.username || user;
@@ -56,12 +60,10 @@ export default function LoginPage() {
         <div className="space-y-4">
           <div className="relative">
             <User className="absolute left-4 top-4 text-slate-400" size={20} />
-            {/* 🔥 Aquí añadimos text-slate-900 font-semibold y mantuvimos pl-11 */}
             <input name="user" placeholder="Email o Usuario" required className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-900 font-semibold placeholder:text-slate-400" />
           </div>
           <div className="relative">
             <Lock className="absolute left-4 top-4 text-slate-400" size={20} />
-            {/* 🔥 Aquí también */}
             <input name="pass" type="password" placeholder="Contraseña" required className="w-full pl-11 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-900 font-semibold placeholder:text-slate-400" />
           </div>
         </div>

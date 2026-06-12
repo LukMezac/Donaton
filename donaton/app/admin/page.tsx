@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Package, Truck, ClipboardList,
+  LayoutDashboard, Package, Truck, ClipboardList, Users,
   RefreshCcw, Trash2, CheckCircle2, Search,
   Activity, ChevronRight, Edit3, Check, LogOut, Heart
 } from 'lucide-react';
@@ -12,7 +12,8 @@ function NavItem({ icon, label, active, onClick, color }: any) {
     const colors: any = { 
       blue: 'text-blue-600 bg-blue-50', 
       rose: 'text-rose-600 bg-rose-50', 
-      indigo: 'text-indigo-600 bg-indigo-50' 
+      indigo: 'text-indigo-600 bg-indigo-50',
+      purple: 'text-purple-600 bg-purple-50'
     };
     return (
       <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl font-extrabold text-sm transition-all group ${active ? colors[color] : 'text-slate-400 hover:bg-slate-50'}`}>
@@ -34,13 +35,14 @@ const URLS = {
   INVENTARIO: 'http://127.0.0.1:8090/productos',
   NECESIDADES: 'http://127.0.0.1:8090/necesidades',
   LOGISTICA: 'http://127.0.0.1:8090/envios',
+  USUARIOS: 'http://127.0.0.1:8090/usuarios', 
 };
 
 const ESTADOS_LOGISTICA = ['Pendiente', 'En Tránsito', 'Entregado'];
 
 export default function AdminPage() {
   const [data, setData] = useState<any[]>([]);
-  const [vistaActiva, setVistaActiva] = useState<'INVENTARIO' | 'NECESIDADES' | 'LOGISTICA'>('INVENTARIO');
+  const [vistaActiva, setVistaActiva] = useState<'INVENTARIO' | 'NECESIDADES' | 'LOGISTICA' | 'USUARIOS'>('INVENTARIO');
   const [cargando, setCargando] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -73,6 +75,7 @@ export default function AdminPage() {
     cookiesParaLimpiar.forEach(cookie => {
       document.cookie = `${cookie}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax`;
     });
+    localStorage.removeItem('userRole');
     window.location.replace("/login");
   };
 
@@ -88,6 +91,24 @@ export default function AdminPage() {
     } catch (e) {
       console.error("Error eliminar", e);
     }
+  };
+
+  // 👥 CAMBIAR ROL DE USUARIO
+  const handleCambiarRol = async (id: number, nuevoRol: string) => {
+    try {
+      const res = await fetch(`${URLS.USUARIOS}/${id}/rol`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(nuevoRol) 
+      });
+      if (res.ok) {
+        alert("Rol actualizado correctamente");
+        await fetchData(); 
+      }
+    } catch (e) { console.error("Error al cambiar rol", e); }
   };
 
   // ✏️ EDITAR INVENTARIO
@@ -106,16 +127,13 @@ export default function AdminPage() {
         setEditandoId(null);
         await fetchData(); 
       }
-    } catch (e) {
-      console.error("Error editar", e);
-    }
+    } catch (e) { console.error("Error editar", e); }
   };
 
   // ✅ RESOLVER NECESIDAD
   const handleResolverNecesidad = async (item: any) => {
     try {
       const body = { ...item, estado: 'Resuelto' };
-      setData(prev => prev.map(p => p.id === item.id ? body : p));
       const res = await fetch(`${URLS.NECESIDADES}/${item.id}`, {
         method: 'PUT',
         headers: {
@@ -124,10 +142,8 @@ export default function AdminPage() {
         },
         body: JSON.stringify(body)
       });
-      if (!res.ok) await fetchData(); 
-    } catch (e) {
-      console.error(e);
-    }
+      if (res.ok) await fetchData(); 
+    } catch (e) { console.error(e); }
   };
 
   // 🔄 CICLO LOGÍSTICA
@@ -139,8 +155,6 @@ export default function AdminPage() {
     const nuevoEstado = ESTADOS_LOGISTICA[nextIndex]; 
 
     const body = { ...item, estado: nuevoEstado, prioridad: nuevoEstado };
-    setData(prev => prev.map(p => p.id === item.id ? body : p));
-
     try {
       const res = await fetch(`${URLS.LOGISTICA}/${item.id}`, {
         method: 'PUT',
@@ -150,15 +164,12 @@ export default function AdminPage() {
         },
         body: JSON.stringify(body)
       });
-      if (!res.ok) await fetchData(); 
-    } catch (e) {
-      console.error(e);
-      await fetchData(); 
-    }
+      if (res.ok) await fetchData(); 
+    } catch (e) { console.error(e); }
   };
 
   const filteredData = data.filter(item =>
-    (item.nombre || item.descripcion || item.destino || '')
+    (item.nombre || item.descripcion || item.destino || item.email || '')
       .toLowerCase()
       .includes(busqueda.toLowerCase())
   );
@@ -182,6 +193,7 @@ export default function AdminPage() {
           <NavItem icon={<Package size={22} />} label="Inventario" active={vistaActiva === 'INVENTARIO'} onClick={() => setVistaActiva('INVENTARIO')} color="blue" />
           <NavItem icon={<ClipboardList size={22} />} label="Necesidades" active={vistaActiva === 'NECESIDADES'} onClick={() => setVistaActiva('NECESIDADES')} color="rose" />
           <NavItem icon={<Truck size={22} />} label="Logística" active={vistaActiva === 'LOGISTICA'} onClick={() => setVistaActiva('LOGISTICA')} color="indigo" />
+          <NavItem icon={<Users size={22} />} label="Usuarios" active={vistaActiva === 'USUARIOS'} onClick={() => setVistaActiva('USUARIOS')} color="purple" />
         </nav>
 
         <div className="p-6 border-t border-slate-50">
@@ -197,7 +209,6 @@ export default function AdminPage() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
-        
         <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-slate-50 flex items-center justify-between px-12 sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -228,35 +239,73 @@ export default function AdminPage() {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-10 py-7 text-[11px] font-black text-slate-400 uppercase tracking-widest">Información General</th>
-                  <th className="px-10 py-7 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">Métrica / Estado</th>
+                  <th className="px-10 py-7 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                    {vistaActiva === 'USUARIOS' ? 'Datos del Usuario' : 'Información General'}
+                  </th>
+                  <th className="px-10 py-7 text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                    {vistaActiva === 'USUARIOS' ? 'Rol Actual' : 'Métrica / Estado'}
+                  </th>
                   <th className="px-10 py-7 text-right text-[11px] font-black text-slate-400 uppercase tracking-widest">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {!cargando && filteredData.map((item) => (
                     <tr key={item.id} className="group hover:bg-slate-50/40 transition-all">
+                      
+                      {/* COLUMNA 1: INFORMACIÓN */}
                       <td className="px-10 py-8">
                         <div className="flex items-center gap-5">
                           <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-400 text-xs">{item.id}</div>
                           <div>
                             <div className="font-extrabold text-slate-800 text-lg capitalize">
-                              {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : (item.nombre || item.descripcion || "Recurso")}
+                              {vistaActiva === 'LOGISTICA' ? (item.destino || "Destino Pendiente") : 
+                               vistaActiva === 'USUARIOS' ? (item.nombre || "Sin Nombre") :
+                               (item.nombre || item.descripcion || "Recurso")}
                             </div>
-                            {/* CATEGORÍA DINÁMICA */}
-                            <div className="text-[11px] font-bold text-slate-400 uppercase">
-                              {vistaActiva === 'LOGISTICA' 
-                                ? `Chofer: ${item.transportista || 'N/A'}` 
-                                : vistaActiva === 'INVENTARIO' 
-                                  ? `Categoría: ${item.categoria || 'General'}`
-                                  : 'Alerta del sistema'}
+                            
+                            {/* 🔥 AQUÍ ESTÁ LA LÓGICA DE LA ETIQUETA INSTITUCIONAL A PRUEBA DE FALLOS */}
+                            <div className={`text-[11px] font-bold uppercase mt-1 ${
+                              vistaActiva === 'NECESIDADES' && (
+                                (item.ubicacion || '').includes('[MUNI]') || 
+                                (item.descripcion || '').toLowerCase().includes('muni') ||
+                                (item.nombre || '').toLowerCase().includes('muni')
+                              ) ? 'text-purple-600' : 'text-slate-400'
+                            }`}>
+                              {vistaActiva === 'LOGISTICA' ? `Chofer: ${item.transportista || 'N/A'}` : 
+                               vistaActiva === 'USUARIOS' ? `Correo: ${item.email || 'N/A'}` :
+                               vistaActiva === 'INVENTARIO' ? `Categoría: ${item.categoria || 'General'}` : 
+                               vistaActiva === 'NECESIDADES' ? (
+                                  
+                                  // Si detecta la etiqueta o la palabra clave, pinta de morado
+                                  (item.ubicacion || '').includes('[MUNI]') || 
+                                  (item.descripcion || '').toLowerCase().includes('muni') || 
+                                  (item.nombre || '').toLowerCase().includes('muni')
+                                    ? '🏛️ SOLICITUD INSTITUCIONAL (MUNI)' :
+                                  
+                                  (item.ubicacion || '').includes('[USER]') 
+                                    ? '📢 REPORTE CIUDADANO' :
+                                  
+                                  '⚠️ ALERTA DEL SISTEMA'
+                               ) : 'Alerta del sistema'}
                             </div>
+
                           </div>
                         </div>
                       </td>
                       
+                      {/* COLUMNA 2: ESTADO O SELECT DE ROLES */}
                       <td className="px-10 py-8 text-center">
-                        {editandoId === item.id ? (
+                        {vistaActiva === 'USUARIOS' ? (
+                          <select 
+                            value={item.rol || 'USER'} 
+                            onChange={(e) => handleCambiarRol(item.id, e.target.value)}
+                            className="bg-purple-50 text-purple-700 border border-purple-200 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest outline-none cursor-pointer hover:bg-purple-100 transition-all"
+                          >
+                            <option value="USER">👤 CIUDADANO</option>
+                            <option value="MUNICIPAL">🏛️ MUNICIPAL</option>
+                            <option value="ADMIN">⭐ ADMIN</option>
+                          </select>
+                        ) : editandoId === item.id ? (
                            <input type="number" value={nuevoValor} onChange={(e) => setNuevoValor(Number(e.target.value))} className="w-24 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-xl outline-none text-center font-black text-blue-700" autoFocus />
                         ) : (
                           <button
@@ -272,6 +321,7 @@ export default function AdminPage() {
                         )}
                       </td>
 
+                      {/* COLUMNA 3: ACCIONES */}
                       <td className="px-10 py-8 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
                           {vistaActiva === 'INVENTARIO' && (

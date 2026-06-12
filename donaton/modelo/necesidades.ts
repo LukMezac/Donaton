@@ -85,5 +85,29 @@ export const NecesidadService = {
 
     if (!res.ok) throw new Error("Error al eliminar");
     return true;
-  }
+  },
+  // ✅ CREAR (ESPECIAL MUNICIPAL)
+  async crearMunicipal(data: any, token: string) {
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // El token es obligatorio aquí
+      };
+
+      const res = await fetch(`${URL}/municipal`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (error) {
+      console.error("🔥 ERROR CREAR MUNICIPAL:", error);
+      throw error;
+    }
+  },
 };
