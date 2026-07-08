@@ -22,20 +22,27 @@ export default async function RegistroDonacionPage() {
     const nombre = formData.get('nombre') as string;
     const categoria = formData.get('categoria') as string;
     const cantidad = parseInt(formData.get('cantidad') as string);
+    
+    // 🔥 NUEVOS CAMPOS DEL CASO SEMESTRAL
+    const origen = formData.get('origen') as string;
+    const fecha = formData.get('fecha') as string;
+    const centroAcopio = formData.get('centroAcopio') as string;
 
-    // 2. Armamos el objeto
+    // 2. Armamos el objeto con todos los datos requeridos
     const nuevoProducto = {
       nombre: nombre,
       categoria: categoria,
-      cantidad: isNaN(cantidad) ? 0 : cantidad // Protegemos que sea un número válido
+      cantidad: isNaN(cantidad) ? 0 : cantidad,
+      origen: origen,
+      fecha: fecha,
+      centroAcopio: centroAcopio
     };
 
     try {
-      // 🔥 ¡AQUÍ ESTÁ LA MAGIA ARREGLADA! Pasamos el producto Y EL TOKEN
+      // Pasamos el producto Y EL TOKEN
       await ProductoService.crear(nuevoProducto, token);
     } catch (error) {
       console.error("No se pudo guardar la donación", error);
-      // Aquí podrías manejar el error visualmente si quisieras
     }
 
     // 3. Refrescamos la lista y redirigimos
@@ -89,7 +96,6 @@ export default async function RegistroDonacionPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Categoría</label>
                 <select 
@@ -109,19 +115,45 @@ export default async function RegistroDonacionPage() {
                   name="cantidad" 
                   type="number" 
                   required 
-                  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50" 
+                  min="1"
+                  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-700" 
+                />
+              </div>
+            </div>
+
+            {/* 🔥 NUEVOS CAMPOS: ORIGEN Y FECHA */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Origen / Donante</label>
+                <input 
+                  name="origen" 
+                  type="text" 
+                  required 
+                  placeholder="Ej: Empresa XYZ" 
+                  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-700" 
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Fecha de Ingreso</label>
+                <input 
+                  name="fecha" 
+                  type="date" 
+                  required 
+                  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-700" 
+                />
+              </div>
             </div>
 
-            {/* OJO: Este campo no tiene "name" porque tu backend no lo pide, así que lo dejé como campo visual nomás */}
+            {/* 🔥 CAMPO ARREGLADO: AHORA TIENE NAME */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Centro de Acopio Asignado</label>
               <input 
+                name="centroAcopio"
                 type="text" 
+                required
                 placeholder="Ej: Sede Valparaíso" 
-                className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50" 
+                className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-all text-slate-700" 
               />
             </div>
 

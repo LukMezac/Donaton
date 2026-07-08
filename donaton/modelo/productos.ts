@@ -8,7 +8,7 @@ export const ProductoService = {
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const res = await fetch(URL, {
-        cache: "no-store",
+        cache: "no-store", // Asegura que siempre traiga datos frescos
         headers
       });
 
@@ -23,8 +23,7 @@ export const ProductoService = {
 
   async crear(data: any, token: string) {
     try {
-
-      console.log("📦 Enviando producto:", data);
+      console.log("📦 Enviando producto al backend:", data);
 
       const res = await fetch(URL, {
         method: "POST",
@@ -35,7 +34,11 @@ export const ProductoService = {
         body: JSON.stringify({
           nombre: data.nombre,
           categoria: data.categoria,
-          cantidad: Number(data.cantidad)
+          cantidad: Number(data.cantidad),
+          // Estos campos ahora se envían correctamente para ser persistidos
+          origen: data.origen,
+          fecha: data.fecha,
+          centroAcopio: data.centroAcopio
         })
       });
 

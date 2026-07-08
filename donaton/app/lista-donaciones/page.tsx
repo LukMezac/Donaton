@@ -2,7 +2,7 @@ import { ProductoService } from '@/modelo/productos';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Package, Plus } from 'lucide-react';
+import { ArrowLeft, Package, Plus, MapPin } from 'lucide-react';
 
 export default async function ListaDonacionesPage() {
 
@@ -17,9 +17,7 @@ export default async function ListaDonacionesPage() {
   // 🔥 3. LLAMAR AL BACKEND
   let productos: any[] = [];
   try {
-    // ✅ AQUÍ ESTÁ LA MAGIA: Le pasamos el token al servicio para que lo envíe a Java
     const data = await ProductoService.listar(token);
-    // Nos aseguramos de que data sea un arreglo para que el .map no explote
     productos = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error al cargar la lista de productos:", error);
@@ -41,7 +39,7 @@ export default async function ListaDonacionesPage() {
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto py-12 px-6">
+      <main className="max-w-6xl mx-auto py-12 px-6">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
@@ -64,12 +62,15 @@ export default async function ListaDonacionesPage() {
         {/* Tabla */}
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead className="bg-slate-50/50 text-slate-500 text-xs uppercase tracking-widest border-b border-slate-100">
                 <tr>
                   <th className="p-6 font-bold">Producto</th>
                   <th className="p-6 font-bold">Categoría</th>
-                  <th className="p-6 font-bold text-center">Stock Disponible</th>
+                  <th className="p-6 font-bold text-center">Stock</th>
+                  <th className="p-6 font-bold">Origen / Donante</th>
+                  <th className="p-6 font-bold">Fecha Ingreso</th>
+                  <th className="p-6 font-bold">Centro de Acopio</th>
                 </tr>
               </thead>
 
@@ -85,11 +86,21 @@ export default async function ListaDonacionesPage() {
                           {item?.cantidad ?? 0} cant
                         </span>
                       </td>
+                      {/* 🔥 NUEVOS CAMPOS RENDERIZADOS */}
+                      <td className="p-6 text-slate-600 font-medium">{item?.origen ?? "-"}</td>
+                      <td className="p-6 text-slate-500 text-sm">{item?.fecha ?? "-"}</td>
+                      <td className="p-6">
+                        <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">
+                          <MapPin size={14} />
+                          {item?.centroAcopio ?? "Sin asignar"}
+                        </span>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="p-10 text-center text-slate-400 font-medium">
+                    {/* 🔥 ACTUALIZADO A colSpan 6 */}
+                    <td colSpan={6} className="p-10 text-center text-slate-400 font-medium">
                       No hay donaciones registradas en el sistema.
                     </td>
                   </tr>

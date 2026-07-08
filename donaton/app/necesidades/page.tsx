@@ -33,6 +33,9 @@ export default async function NecesidadesPage() {
     const ubicacionOriginal = formData.get('ubicacion') as string;
     const descripcion = formData.get('descripcion') as string;
     
+    // 🔥 CAPTURAMOS EL NUEVO CAMPO CANTIDAD
+    const cantidad = Number(formData.get('cantidad'));
+    
     // 🔥 EL TRUCO NINJA: Etiquetamos el origen silenciosamente
     const ubicacionConEtiqueta = rolAction === 'MUNICIPAL' 
       ? `[MUNI] ${ubicacionOriginal}` 
@@ -44,8 +47,11 @@ export default async function NecesidadesPage() {
     await NecesidadService.crear({ 
       ubicacion: ubicacionConEtiqueta, // ✅ Se guarda con la etiqueta secreta
       descripcion, 
+      cantidad, // 🔥 LO ENVIAMOS AL BACKEND
       prioridad,
-      estado: 'Pendiente'
+      estado: 'Pendiente',
+      origenSolicitud: rolAction === 'MUNICIPAL' ? 'MUNICIPALIDAD' : 'CIUDADANO',
+      entidadSolicitante: 'N/A'
     }, tokenAction);
     
     revalidatePath('/necesidades');
@@ -90,6 +96,13 @@ export default async function NecesidadesPage() {
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Descripción</label>
                 <textarea name="descripcion" required placeholder="Ej: Agua y pañales..." rows={3}
                   className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm resize-none"></textarea>
+              </div>
+              
+              {/* 🔥 NUEVO CAMPO: CANTIDAD */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Cantidad Requerida</label>
+                <input name="cantidad" type="number" min="1" required placeholder="Ej: 50" 
+                  className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 bg-slate-50 focus:bg-white transition-all text-sm" />
               </div>
               
               {/* 🔥 OCULTAMOS LA PRIORIDAD PARA LA MUNI (ES ALTA POR DEFECTO) */}
@@ -140,7 +153,17 @@ export default async function NecesidadesPage() {
                       <MapPin size={14}/> {item.ubicacion ? item.ubicacion.replace('[MUNI] ', '').replace('[USER] ', '').replace('[MUNI]', '').replace('[USER]', '') : ''}
                     </span>
                   </div>
-                  <p className="text-slate-700 font-medium">{item.descripcion}</p>
+                  
+                  {/* 🔥 DESCRIPCIÓN + BADGE DE CANTIDAD INTEGRADO */}
+                  <div className="mt-1">
+                    <p className="text-slate-700 font-medium inline-block mr-3">
+                      {item.descripcion}
+                    </p>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-extrabold border border-blue-100 align-middle">
+                      📦 Cant: {item.cantidad || 'N/A'}
+                    </span>
+                  </div>
+
                 </div>
                 
                 <div>
