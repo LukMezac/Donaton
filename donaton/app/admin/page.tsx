@@ -263,7 +263,7 @@ export default function AdminPage() {
                                (item.nombre || item.descripcion || "Recurso")}
                             </div>
                             
-                            {/* 🔥 AQUÍ ESTÁ LA LÓGICA DE LA ETIQUETA INSTITUCIONAL A PRUEBA DE FALLOS */}
+                            {/* ETIQUETA INSTITUCIONAL */}
                             <div className={`text-[11px] font-bold uppercase mt-1 ${
                               vistaActiva === 'NECESIDADES' && (
                                 (item.ubicacion || '').includes('[MUNI]') || 
@@ -275,19 +275,47 @@ export default function AdminPage() {
                                vistaActiva === 'USUARIOS' ? `Correo: ${item.email || 'N/A'}` :
                                vistaActiva === 'INVENTARIO' ? `Categoría: ${item.categoria || 'General'}` : 
                                vistaActiva === 'NECESIDADES' ? (
-                                  
-                                  // Si detecta la etiqueta o la palabra clave, pinta de morado
-                                  (item.ubicacion || '').includes('[MUNI]') || 
-                                  (item.descripcion || '').toLowerCase().includes('muni') || 
-                                  (item.nombre || '').toLowerCase().includes('muni')
-                                    ? '🏛️ SOLICITUD INSTITUCIONAL (MUNI)' :
-                                  
-                                  (item.ubicacion || '').includes('[USER]') 
-                                    ? '📢 REPORTE CIUDADANO' :
-                                  
-                                  '⚠️ ALERTA DEL SISTEMA'
+                                 
+                                 // Si detecta la etiqueta o la palabra clave, pinta de morado
+                                 (item.ubicacion || '').includes('[MUNI]') || 
+                                 (item.descripcion || '').toLowerCase().includes('muni') || 
+                                 (item.nombre || '').toLowerCase().includes('muni')
+                                   ? '🏛️ SOLICITUD INSTITUCIONAL (MUNI)' :
+                                 
+                                 (item.ubicacion || '').includes('[USER]') 
+                                   ? '📢 REPORTE CIUDADANO' :
+                                 
+                                 '⚠️ ALERTA DEL SISTEMA'
                                ) : 'Alerta del sistema'}
                             </div>
+
+                            {/* 🔥 DATOS INVENTARIO */}
+                            {vistaActiva === 'INVENTARIO' && (
+                              <div className="text-[10px] font-bold text-slate-400 uppercase mt-1 flex gap-3">
+                                <span>DONANTE: {item.origen || 'N/A'}</span>
+                                <span>FECHA: {item.fecha || 'N/A'}</span>
+                                <span>ACOPIO: {item.centroAcopio || 'N/A'}</span>
+                              </div>
+                            )}
+
+                            {/* 🔥 NUEVOS DATOS NECESIDADES CON COLORES Y PILLS */}
+                            {vistaActiva === 'NECESIDADES' && (
+                              <div className="text-[10px] font-bold uppercase mt-2 flex items-center gap-2">
+                                <span className="text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                                  📍 SECTOR: {item.ubicacion || 'N/A'}
+                                </span>
+                                <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                  📦 CANTIDAD: {item.cantidad ?? 'N/A'}
+                                </span>
+                                <span className={`px-2 py-1 rounded-md ${
+                                  (item.prioridad || '').toLowerCase() === 'alta' ? 'bg-rose-100 text-rose-700' :
+                                  (item.prioridad || '').toLowerCase() === 'media' ? 'bg-amber-100 text-amber-700' :
+                                  'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                  ⚡ PRIORIDAD: {item.prioridad || 'NORMAL'}
+                                </span>
+                              </div>
+                            )}
 
                           </div>
                         </div>
